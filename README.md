@@ -1,5 +1,5 @@
 <!--no-pdf-->
-# CMSC 131 Lab lab1 Starter
+# CMSC 131 Lab 1 Starter
 
 Decode, encode, and checksum 20-byte IPv4 packet headers under a C driver. The manual is the assignment. This file is the repository's own notes.
 
@@ -22,10 +22,7 @@ make
 make check
 ```
 
-`make` builds `driver.c        provided: argument parsing and file I/O
-decode.asm      yours
-encode.asm      yours
-checksum.asm    yours`. `make check` builds, then runs `./run_tests.sh`,
+`make` builds `renpkt`. `make check` builds, then runs `./run_tests.sh`,
 which reports each test and exits nonzero when any of them differ.
 
 ## Reading a First Run
