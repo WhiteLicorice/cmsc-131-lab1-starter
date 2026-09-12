@@ -2,7 +2,7 @@
 #
 # renpkt correctness gate. Runs every header in tests/ through --decode and
 # diffs the output against tests/expected/. Every case must match byte for
-# byte; the comparison strips trailing carriage returns, for the reason
+# byte. The comparison strips trailing carriage returns, for the reason
 # Block 1 explained.
 #
 #       ./run_tests.sh

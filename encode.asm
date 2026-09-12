@@ -1,10 +1,10 @@
 ;
 ; encode.asm - build a 20-byte IPv4 header from the field struct.
 ;
-; This is your starting point: it assembles and links as-is, so the build
-; works before you write any code. Right now it writes twenty zero bytes,
-; which produces a header that decodes as all zeros. Your job is to replace
-; that with the construction described below.
+; This is your starting point. It assembles and links as-is, so the build
+; works before you write any code. Right now it writes nothing, so the
+; twenty bytes driver.c saves are whatever the buffer held. Your job is to
+; replace that with the construction described below.
 ;
 ; The contract, from driver.c:
 ;
@@ -23,7 +23,7 @@
 ; byte 6 with the three flag bits. Its bottom eight bits are byte 7.
 ;
 ; The checksum is your job too. Bytes 10-11 must read as zero while the
-; checksum is computed, so write them as zero, call ip_checksum over the
+; checksum is computed. Write them as zero, call ip_checksum over the
 ; finished header, and store its result into the field. The struct's
 ; checksum member is read on the decode path only. Don't copy it here.
 ;
@@ -31,11 +31,10 @@
 ; Return in eax (driver.c ignores it here, so returning 0 is fine).
 ;
 
-; Windows C decorates the names it exports with a leading underscore and
-; Linux C does not, so the same source would otherwise need two spellings of
-; every entry point. -d ELF_TYPE, which the shared Makefile fragment passes
-; on Linux, selects the respelling here. It's the same trick asm_io.inc
-; uses for _asm_main in the bootcamp blocks. Leave this block alone.
+; Windows C puts a leading underscore on every exported name. Linux C does
+; not. The Makefile passes -d ELF_TYPE on Linux. This block then respells
+; the names below to match. asm_io.inc does the same for _asm_main in the
+; bootcamp blocks. Leave this block alone.
 %ifdef ELF_TYPE
   %define _ip_checksum ip_checksum
   %define _encode_header encode_header
@@ -53,15 +52,21 @@ _encode_header:
         ;
         ; TODO: build the header from the struct.
         ;
-        ; The reverse of decode: shift each field down to where it lives,
-        ; mask it to its width, or the pieces of a shared byte together,
-        ; then store the byte. The fields that do not straddle anything
-        ; are one store each.
+        ; This is the reverse of decode. Mask each field to its width,
+        ; shift it up to where it lives, or the pieces of a shared byte
+        ; together, then store the byte. The fields that do not straddle
+        ; anything are one store each.
         ;
         ; The checksum comes last, after every other byte is written. Write
         ; bytes 10-11 as zero, call ip_checksum with the header and 20, and
         ; store its result (in ax) into the field big-endian. Computing it
         ; before the rest of the header is in place sums whatever garbage
-        ; was in the buffer. ip_checksum preserves the callee-saved
-        ; registers, so saving edi around the call is enough.
+        ; was in the buffer. ip_checksum preserves ebx, esi, edi, and ebp,
+        ; so a pointer kept in one of those survives the call. eax, ecx, and
+        ; edx do not.
         ;
+
+        popa
+        mov     eax, 0
+        leave
+        ret

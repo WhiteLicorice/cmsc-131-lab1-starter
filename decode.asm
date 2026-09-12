@@ -1,10 +1,10 @@
 ;
 ; decode.asm - pull every field out of a 20-byte IPv4 header.
 ;
-; This is your starting point: it assembles and links as-is, so the build
-; works before you write any code. Right now it fills the struct with zeros,
-; which makes renpkt print a header of zeros and report it as INVALID. Your
-; job is to replace that with the extraction described below.
+; This is your starting point. It assembles and links as-is, so the build
+; works before you write any code. Right now it stores nothing, so renpkt
+; prints the zeros driver.c put in the struct. Your job is to replace that
+; with the extraction described below.
 ;
 ; The contract, from driver.c:
 ;
@@ -26,11 +26,10 @@
 ; Return in eax (driver.c ignores it here, so returning 0 is fine).
 ;
 
-; Windows C decorates the names it exports with a leading underscore and
-; Linux C does not, so the same source would otherwise need two spellings of
-; every entry point. -d ELF_TYPE, which the shared Makefile fragment passes
-; on Linux, selects the respelling here. It's the same trick asm_io.inc
-; uses for _asm_main in the bootcamp blocks. Leave this block alone.
+; Windows C puts a leading underscore on every exported name. Linux C does
+; not. The Makefile passes -d ELF_TYPE on Linux. This block then respells
+; the names below to match. asm_io.inc does the same for _asm_main in the
+; bootcamp blocks. Leave this block alone.
 %ifdef ELF_TYPE
   %define _decode_header decode_header
   section .note.GNU-stack noalloc noexec nowrite progbits
@@ -62,3 +61,8 @@ _decode_header:
         ; Nothing here reads the file or prints. This routine only fills
         ; the struct, and driver.c does the rest.
         ;
+
+        popa
+        mov     eax, 0
+        leave
+        ret

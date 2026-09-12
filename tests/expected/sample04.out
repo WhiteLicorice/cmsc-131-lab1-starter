@@ -1,0 +1,14 @@
+Version:          4
+IHL:              5 (20 bytes)
+DSCP:             46
+ECN:              1
+Total Length:     1500
+Identification:   48879
+Flags:            1 (MF)
+Fragment Offset:  4660
+TTL:              128
+Protocol:         17 (UDP)
+Header Checksum:  0x2F32
+Source:           10.0.0.1
+Destination:      10.0.0.2
+Checksum:         VALID

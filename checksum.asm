@@ -1,12 +1,11 @@
 ;
 ; checksum.asm - the one's complement internet checksum.
 ;
-; This is your starting point: it assembles and links as-is, so the build
+; This is your starting point. It assembles and links as-is, so the build
 ; works before you write any code. Right now it always returns 0, which
-; makes every header decode as VALID (the decode path sums the header as it
-; stands and tests for zero, so a checksum routine that returns 0 means
-; "valid" for everything). Your job is to replace that with the sum
-; described below.
+; makes every header decode as VALID. The decode path sums the header as it
+; stands and tests for zero, so a routine that returns 0 says "valid" for
+; everything. Your job is to replace that with the sum described below.
 ;
 ; The contract, from driver.c:
 ;
@@ -14,25 +13,24 @@
 ;       unsigned char *hdr        [ebp+8]
 ;
 ; Sum len bytes of hdr as len/2 16-bit big-endian words into a 32-bit
-; accumulator, fold the carries until the result fits in 16 bits, and return
+; accumulator. Fold the carries until the result fits in 16 bits. Return
 ; the one's complement of that in ax. The manual's worked example is the
-; test: zero the checksum field, sum the sample header, and you must get
+; test. Zero the checksum field, sum the sample header, and you must get
 ; 0x9CBC.
 ;
 ; The decode path calls this over the header as it stands, checksum field
 ; included. A valid header returns 0 and an invalid one does not. The
 ; encode path calls it over a header whose checksum field you wrote as zero.
-; Both uses fall out of the same routine. You don't need to know which one
-; called you.
+; One routine serves both uses. You don't need to know which one called
+; you.
 ;
 ; Do not clobber ebx, esi, edi, or ebp. C assumes they survive your call.
 ;
 
-; Windows C decorates the names it exports with a leading underscore and
-; Linux C does not, so the same source would otherwise need two spellings of
-; every entry point. -d ELF_TYPE, which the shared Makefile fragment passes
-; on Linux, selects the respelling here. It's the same trick asm_io.inc
-; uses for _asm_main in the bootcamp blocks. Leave this block alone.
+; Windows C puts a leading underscore on every exported name. Linux C does
+; not. The Makefile passes -d ELF_TYPE on Linux. This block then respells
+; the names below to match. asm_io.inc does the same for _asm_main in the
+; bootcamp blocks. Leave this block alone.
 %ifdef ELF_TYPE
   %define _ip_checksum ip_checksum
   section .note.GNU-stack noalloc noexec nowrite progbits
@@ -59,7 +57,12 @@ _ip_checksum:
         ;      need the fold twice.
         ;   4. NOT the low 16 bits. That is the checksum.
         ;
-        ; len is always even (the driver calls this with 20), so a loop
+        ; len is always even, since the driver calls this with 20. A loop
         ; that consumes two bytes per iteration and stops on ecx == 0 is
         ; enough. Leave the answer in ax when you return.
         ;
+
+        popa
+        mov     eax, 0
+        leave
+        ret

@@ -6,13 +6,15 @@ Decode, encode, and checksum 20-byte IPv4 packet headers under a C driver. The m
 ## Layout
 
 ```text
-Makefile       platform preamble and build rules
+Makefile        platform preamble and build rules
 driver.c        provided: argument parsing and file I/O
+cdecl.h         provided: the calling-convention macros
 decode.asm      yours
 encode.asm      yours
 checksum.asm    yours
-run_tests.sh   provided: the correctness gate
-tests/         provided: the test corpus
+run_tests.sh    provided: the correctness gate
+tests/          provided: the test corpus
+LICENSE         CC BY-NC-SA 4.0, inherited from the pcasm material
 ```
 
 ## What to Run

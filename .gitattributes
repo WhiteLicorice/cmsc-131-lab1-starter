@@ -7,6 +7,5 @@
 *.h      text eol=lf
 Makefile text eol=lf
 *.sh     text eol=lf
-tests/*.txt        text eol=lf
 tests/expected/*.out  text eol=lf
 tests/*.bin        binary

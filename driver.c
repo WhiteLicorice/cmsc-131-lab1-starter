@@ -1,11 +1,12 @@
 /*
  * renpkt - read and write IPv4 headers. Provided to the group. Do not modify.
  *
- * This file does everything that is not bit manipulation: it parses the
- * command line, opens files, reads the twenty bytes of a header into a
- * buffer, calls the assembly routines below, and formats the output. Your
- * defense will use this copy, so what it prints and the struct it fills are
- * the contract. Read this file before writing assembly.
+ * This file does everything that is not bit manipulation. It parses the
+ * command line, opens files, and reads the twenty bytes of a header into
+ * a buffer. Then it calls the assembly routines below and formats the
+ * output. Your defense will use this copy, so what it prints and the
+ * struct it fills are the contract. Read this file before writing
+ * assembly.
  *
  * The three routines you implement are declared at the bottom, with the
  * struct they share. Everything else in here is the part the activity is
@@ -38,11 +39,11 @@
 /*       +--------+--------+--------+--------+                       */
 /*                                                                    */
 /* The struct below is what decode_header fills and encode_header     */
-/* reads. Its layout is deliberate: every member is an unsigned int   */
+/* reads. Its layout is deliberate. Every member is an unsigned int,  */
 /* so the assembly can store and load them with plain 32-bit moves.   */
-/* The two addresses are four octets each, stored as eight separate   */
-/* bytes in the struct so the assembly never has to form a multi-     */
-/* byte number out of them.                                           */
+/* The two addresses are four octets each. They are stored as eight   */
+/* separate bytes in the struct, so the assembly never has to form a  */
+/* multi-byte number out of them.                                     */
 /*                                                                    */
 /* Offsets (each int member is 4 bytes. The octets are single bytes): */
 /*                                                                    */
@@ -79,7 +80,7 @@ void PRE_CDECL encode_header(struct ipv4_fields *in, unsigned char *hdr) POST_CD
 unsigned short PRE_CDECL ip_checksum(unsigned char *hdr, int len) POST_CDECL;
 
 /* ------------------------------------------------------------------ */
-/* The rest is driver. Read it for the output format, not to change.  */
+/* The rest is driver. Read it for the output format. Leave it as is. */
 /* ------------------------------------------------------------------ */
 
 static const char *proto_name(unsigned int p)
@@ -168,8 +169,8 @@ static void usage(void)
         "usage:\n"
         "  renpkt --decode FILE\n"
         "  renpkt --encode [--ttl N] [--proto N] [--len N] [--id N]\n"
-        "                 [--frag N] [--flags N] [--src A.B.C.D] [--dst A.B.C.D]\n"
-        "                 [--df] [--mf] -o FILE\n");
+        "                 [--dscp N] [--ecn N] [--frag N] [--flags N]\n"
+        "                 [--src A.B.C.D] [--dst A.B.C.D] [--df] [--mf] -o FILE\n");
     exit(2);
 }
 
@@ -213,6 +214,10 @@ static void cmd_encode(int argc, char **argv)
             f.total_length = (unsigned)atoi(argv[++i]);
         } else if (!strcmp(argv[i], "--id") && i + 1 < argc) {
             f.identification = (unsigned)atoi(argv[++i]);
+        } else if (!strcmp(argv[i], "--dscp") && i + 1 < argc) {
+            f.dscp = (unsigned)atoi(argv[++i]);
+        } else if (!strcmp(argv[i], "--ecn") && i + 1 < argc) {
+            f.ecn = (unsigned)atoi(argv[++i]);
         } else if (!strcmp(argv[i], "--frag") && i + 1 < argc) {
             f.fragment_offset = (unsigned)atoi(argv[++i]);
         } else if (!strcmp(argv[i], "--flags") && i + 1 < argc) {
