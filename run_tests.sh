@@ -2,16 +2,21 @@
 #
 # renpkt correctness gate. It runs two passes.
 #
-# Pass 1, decode. Every header in tests/ goes through --decode. The output
-# is captured, the program's status is read, and the output is compared
-# against tests/expected/. The comparison strips trailing carriage returns,
-# for the reason Block 1 explained.
+# Pass 1, decode. Every header listed in tests/manifest.txt goes through
+# --decode. The output is captured, the program's status is read, and the
+# output is compared against tests/expected/. The comparison strips trailing
+# carriage returns, for the reason Block 1 explained.
 #
-# Pass 2, contract. ./contract_test decodes and re-encodes every valid
-# sample, checks the checksum vector that needs two carry folds, and checks
-# the register discipline of all three routines. That pass catches what the
-# output comparison cannot see: a lost field on the encode path, a truncated
-# fold, and a clobbered callee-saved register.
+# Pass 2, contract. ./contract_test decodes and re-encodes every header the
+# manifest marks valid, checks the checksum vector that needs two carry
+# folds, and checks the register discipline of all three routines. That
+# pass catches what the output comparison cannot see: a lost field on the
+# encode path, a truncated fold, and a clobbered callee-saved register.
+#
+# The manifest is the one list both passes share. A .bin under tests/ that
+# the manifest does not list fails the gate, and so does a listed header
+# without a tests/expected/NAME.out file. Add a header to the manifest and
+# it joins both passes.
 #
 #       ./run_tests.sh
 #
@@ -39,10 +44,45 @@ trap 'rm -f "$out"' EXIT
 failures=0
 total=0
 
+manifest="tests/manifest.txt"
+if [ ! -f "$manifest" ]; then
+    echo "run_tests.sh: $manifest not found." >&2
+    exit 1
+fi
+
+# Every .bin must be listed. A header dropped into tests/ without a manifest
+# line and an expected file would otherwise be skipped in silence.
 for header in tests/*.bin; do
     name="$(basename "$header" .bin)"
+    if ! grep -qE "^$name[[:space:]]+(valid|invalid)[[:space:]]*$" "$manifest"; then
+        echo "FAIL  $name is in tests/ but not in $manifest. Add a line: $name valid (or invalid)."
+        failures=$((failures + 1))
+        total=$((total + 1))
+    fi
+done
+
+while read -r name kind; do
+    case "$name" in ''|'#'*) continue ;; esac
+    kind="${kind%$'\r'}"    # a manifest checked out with CRLF still reads
+    header="tests/$name.bin"
     expected="tests/expected/$name.out"
     total=$((total + 1))
+
+    if [ "$kind" != valid ] && [ "$kind" != invalid ]; then
+        echo "FAIL  $name: $manifest marks it '$kind'. The class is valid or invalid."
+        failures=$((failures + 1))
+        continue
+    fi
+    if [ ! -f "$header" ]; then
+        echo "FAIL  $name is listed in $manifest but $header does not exist"
+        failures=$((failures + 1))
+        continue
+    fi
+    if [ ! -f "$expected" ]; then
+        echo "FAIL  $name has no expected output. Write $expected first."
+        failures=$((failures + 1))
+        continue
+    fi
 
     "$bin" --decode "$header" > "$out" 2>/dev/null
     status=$?
@@ -60,7 +100,7 @@ for header in tests/*.bin; do
         echo "FAIL  $name"
         failures=$((failures + 1))
     fi
-done
+done < "$manifest"
 
 # The contract pass. One more check, and it lives in its own program.
 testbin="./contract_test"

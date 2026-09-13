@@ -8,4 +8,5 @@
 Makefile text eol=lf
 *.sh     text eol=lf
 tests/expected/*.out  text eol=lf
+tests/manifest.txt    text eol=lf
 tests/*.bin        binary

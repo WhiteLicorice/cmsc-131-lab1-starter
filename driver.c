@@ -18,7 +18,11 @@
  *
  * Every numeric option is checked against the width of its field, so a
  * value that cannot fit is refused at the command line instead of being
- * silently truncated by the assembler's masks.
+ * silently truncated by the assembler's masks. Two options are checked
+ * against the standard as well as the width. The total length must be at
+ * least 20, because it counts the header itself. The flags field keeps its
+ * top bit zero, because RFC 791 reserves that bit, so --flags accepts 0
+ * through 3 and --df and --mf set the two bits that exist.
  */
 
 #include <stdio.h>
@@ -185,15 +189,15 @@ static int parse_u32(const char *s, unsigned long limit, unsigned int *out)
 /*
  * need_number - parse a numeric option value or stop with a message.
  *
- * Every numeric option is bounded by the width of the field it feeds, so a
- * value the field cannot hold is refused here. The limits are listed in
- * the usage text and in the manual's field table.
+ * Every numeric option is bounded by the range its field may hold, so a
+ * value outside the range is refused here. The ranges are listed in the
+ * usage text and in the manual's field table.
  */
-static unsigned int need_number(const char *name, const char *text, unsigned long limit)
+static unsigned int need_number(const char *name, const char *text, unsigned long low, unsigned long limit)
 {
     unsigned int value;
-    if (!parse_u32(text, limit, &value)) {
-        fprintf(stderr, "renpkt: %s: bad value: %s (0 to %lu)\n", name, text, limit);
+    if (!parse_u32(text, limit, &value) || value < low) {
+        fprintf(stderr, "renpkt: %s: bad value: %s (%lu to %lu)\n", name, text, low, limit);
         exit(2);
     }
     return value;
@@ -254,8 +258,11 @@ static void usage(void)
         "                 [--dscp N] [--ecn N] [--frag N] [--flags N]\n"
         "                 [--src A.B.C.D] [--dst A.B.C.D] [--df] [--mf] -o FILE\n"
         "\n"
-        "  --ttl 0-255   --proto 0-255   --len 0-65535   --id 0-65535\n"
-        "  --dscp 0-63   --ecn 0-3       --frag 0-8191   --flags 0-7\n");
+        "  --ttl 0-255   --proto 0-255   --len 20-65535  --id 0-65535\n"
+        "  --dscp 0-63   --ecn 0-3       --frag 0-8191   --flags 0-3\n"
+        "\n"
+        "  --len defaults to 20, the header alone. --flags is DF (2) plus\n"
+        "  MF (1). The reserved flag bit stays zero, so 4 to 7 are refused.\n");
     exit(2);
 }
 
@@ -286,27 +293,31 @@ static void cmd_encode(int argc, char **argv)
     memset(&f, 0, sizeof(f));
     f.version = 4;
     f.ihl = 5;
+    f.total_length = 20;   /* the header alone, until --len says otherwise */
 
     const char *out = NULL;
     for (int i = 2; i < argc; i++) {
         if (!strcmp(argv[i], "-o") && i + 1 < argc) {
             out = argv[++i];
         } else if (!strcmp(argv[i], "--ttl") && i + 1 < argc) {
-            f.ttl = need_number("--ttl", argv[++i], 255);
+            f.ttl = need_number("--ttl", argv[++i], 0, 255);
         } else if (!strcmp(argv[i], "--proto") && i + 1 < argc) {
-            f.protocol = need_number("--proto", argv[++i], 255);
+            f.protocol = need_number("--proto", argv[++i], 0, 255);
         } else if (!strcmp(argv[i], "--len") && i + 1 < argc) {
-            f.total_length = need_number("--len", argv[++i], 65535);
+            /* The total length counts the header, so 20 is the floor. */
+            f.total_length = need_number("--len", argv[++i], 20, 65535);
         } else if (!strcmp(argv[i], "--id") && i + 1 < argc) {
-            f.identification = need_number("--id", argv[++i], 65535);
+            f.identification = need_number("--id", argv[++i], 0, 65535);
         } else if (!strcmp(argv[i], "--dscp") && i + 1 < argc) {
-            f.dscp = need_number("--dscp", argv[++i], 63);
+            f.dscp = need_number("--dscp", argv[++i], 0, 63);
         } else if (!strcmp(argv[i], "--ecn") && i + 1 < argc) {
-            f.ecn = need_number("--ecn", argv[++i], 3);
+            f.ecn = need_number("--ecn", argv[++i], 0, 3);
         } else if (!strcmp(argv[i], "--frag") && i + 1 < argc) {
-            f.fragment_offset = need_number("--frag", argv[++i], 8191);
+            f.fragment_offset = need_number("--frag", argv[++i], 0, 8191);
         } else if (!strcmp(argv[i], "--flags") && i + 1 < argc) {
-            f.flags = need_number("--flags", argv[++i], 7);
+            /* Bit 2 of the field is reserved and must be zero, so the
+             * field takes 0 to 3: nothing, MF, DF, or both. */
+            f.flags = need_number("--flags", argv[++i], 0, 3);
         } else if (!strcmp(argv[i], "--src") && i + 1 < argc) {
             if (!parse_octets(argv[++i], f.src)) {
                 fprintf(stderr, "renpkt: bad address: %s\n", argv[i]);

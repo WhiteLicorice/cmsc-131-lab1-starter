@@ -1,0 +1,16 @@
+# tests/manifest.txt - every header in tests/, one per line.
+#
+# Each line is a name and a class. The name is the file under tests/ without
+# its .bin suffix. The class is valid or invalid. run_tests.sh decodes every
+# listed header and compares the output with tests/expected/NAME.out.
+# contract_test decodes and re-encodes every valid header and compares the
+# bytes. A .bin file that is not listed here fails the gate. A listed header
+# without an expected file fails the gate.
+#
+# Add your own headers here. A valid header you add joins the round trip.
+sample01 valid
+sample02 valid
+sample03 valid
+sample04 valid
+sample05 valid
+bad01 invalid

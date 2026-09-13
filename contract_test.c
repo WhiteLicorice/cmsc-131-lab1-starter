@@ -10,15 +10,17 @@
  *
  * This program makes three checks:
  *
- *   1. Round trip. Every valid sample is decoded into the struct and
- *      encoded back into a fresh buffer. The twenty bytes must be identical
- *      to the file.
+ *   1. Round trip. Every header that tests/manifest.txt marks valid is
+ *      decoded into the struct and encoded back into a fresh buffer. The
+ *      twenty bytes must be identical to the file. A valid header you add
+ *      to the manifest joins this check.
  *   2. Checksum vector. A crafted header whose word sum is 0x8FFFF needs
  *      the end-around carry folded twice. The routine must return 0xFFF7.
  *      A routine that folds once returns 0xFFF8.
  *   3. Register discipline. Each routine is called with sentinel values in
- *      ebx, esi, and edi. All three must come back unchanged, and the stack
- *      pointer must be back where it started.
+ *      ebx, esi, and edi. All three must come back unchanged, ebp must
+ *      come back unchanged, and the stack pointer must be back where the
+ *      call left it. That is the cdecl contract, all five parts of it.
  *
  * It exits 0 when every check passes and 1 otherwise. This file is
  * provided, along with contract_regs.asm, which makes check 3 possible.
@@ -61,14 +63,57 @@ int PRE_CDECL check_decode_registers(unsigned char *hdr, struct ipv4_fields *out
 int PRE_CDECL check_encode_registers(struct ipv4_fields *in, unsigned char *hdr) POST_CDECL;
 int PRE_CDECL check_checksum_registers(unsigned char *hdr, int len) POST_CDECL;
 
-/* The valid headers, which must all survive a decode and an encode. */
-static const char *valid_samples[] = {
-    "tests/sample01.bin",
-    "tests/sample02.bin",
-    "tests/sample03.bin",
-    "tests/sample04.bin",
-    "tests/sample05.bin",
-};
+/*
+ * The valid headers come from tests/manifest.txt. Each line of that file
+ * holds a name and a class, `valid` or `invalid`. Every valid header must
+ * survive a decode and an encode. The manifest is the one list run_tests.sh
+ * and this program share, so a header added there is tested by both.
+ */
+#define MAX_SAMPLES 64
+#define MANIFEST "tests/manifest.txt"
+
+static char valid_samples[MAX_SAMPLES][64];
+static size_t valid_count = 0;
+
+static int read_manifest(void)
+{
+    FILE *f = fopen(MANIFEST, "r");
+    char line[128];
+    char name[64];
+    char kind[16];
+
+    if (!f) {
+        printf("FAIL  cannot open %s\n", MANIFEST);
+        return 0;
+    }
+    while (fgets(line, sizeof(line), f)) {
+        if (line[0] == '#' || line[0] == '\n' || line[0] == '\r') continue;
+        if (sscanf(line, "%63s %15s", name, kind) != 2) {
+            printf("FAIL  %s: cannot read line: %s", MANIFEST, line);
+            fclose(f);
+            return 0;
+        }
+        if (strcmp(kind, "valid") == 0) {
+            if (valid_count == MAX_SAMPLES) {
+                printf("FAIL  %s: more than %d valid headers\n", MANIFEST, MAX_SAMPLES);
+                fclose(f);
+                return 0;
+            }
+            snprintf(valid_samples[valid_count], sizeof(valid_samples[0]), "tests/%s.bin", name);
+            valid_count++;
+        } else if (strcmp(kind, "invalid") != 0) {
+            printf("FAIL  %s: %s is neither valid nor invalid: %s\n", MANIFEST, name, kind);
+            fclose(f);
+            return 0;
+        }
+    }
+    fclose(f);
+    if (valid_count == 0) {
+        printf("FAIL  %s lists no valid header\n", MANIFEST);
+        return 0;
+    }
+    return 1;
+}
 
 /*
  * Ten 16-bit big-endian words: nine of 0xFFFF and one of 0x0008. The sum is
@@ -98,24 +143,30 @@ static int read_file(const char *path, unsigned char *buf)
     return 1;
 }
 
+/*
+ * report_mask - print the verdict for one routine. The mask comes from
+ * contract_regs.asm: bit 0 ebx, bit 1 esi, bit 2 edi, bit 3 esp, bit 4
+ * ebp. Every violated obligation is named on the FAIL line.
+ */
 static void report_mask(const char *routine, int mask)
 {
     if (mask == 0) {
-        printf("ok    %s keeps ebx, esi, edi, and esp\n", routine);
+        printf("ok    %s keeps ebx, esi, edi, ebp, and esp\n", routine);
         return;
     }
-    printf("FAIL  %s changed ");
-    if (mask & 1) printf("ebx ");
-    if (mask & 2) printf("esi ");
-    if (mask & 4) printf("edi ");
-    if (mask & 8) printf("esp ");
+    printf("FAIL  %s changed", routine);
+    if (mask & 1) printf(" ebx");
+    if (mask & 2) printf(" esi");
+    if (mask & 4) printf(" edi");
+    if (mask & 16) printf(" ebp");
+    if (mask & 8) printf(" esp (the stack pointer is not where the call left it)");
     printf("\n");
     failures++;
 }
 
 int main(void)
 {
-    size_t count = sizeof(valid_samples) / sizeof(valid_samples[0]);
+    size_t count;
     unsigned char original[20];
     unsigned char rebuilt[20];
     struct ipv4_fields fields;
@@ -125,6 +176,11 @@ int main(void)
     unsigned short got;
 
     /* Check 1: every valid header survives the round trip, byte for byte. */
+    if (!read_manifest()) {
+        printf("\n1 contract check(s) failed.\n");
+        return 1;
+    }
+    count = valid_count;
     for (i = 0; i < count; i++) {
         if (!read_file(valid_samples[i], original)) {
             failures++;
@@ -160,8 +216,9 @@ int main(void)
         failures++;
     }
 
-    /* Check 3: the register discipline of all three routines. */
-    if (read_file("tests/sample01.bin", original)) {
+    /* Check 3: the register discipline of all three routines, on the first
+     * valid header. */
+    if (read_file(valid_samples[0], original)) {
         memset(&fields, 0, sizeof(fields));
         mask = check_decode_registers(original, &fields);
         report_mask("decode_header", mask);
