@@ -71,34 +71,49 @@ CFLAGS := -m32
 #
 # This half names this activity's objects and targets:
 #
-#   make            build renpkt
-#   make check      build, then run ./run_tests.sh
+#   make            build renpkt and the contract test
+#   make check      build both, then run ./run_tests.sh
 #   make test       alias for check
 #   make clean      delete build output
 #
 # Driver-side file I/O and formatting are C; the three routines that do the
 # bit work are assembly. Link them together and you have the tool.
+#
+# contract_test and contract_regs are the provided second pass. They call
+# the three routines directly, so they catch an encode path that loses a
+# field and a routine that clobbers a callee-saved register. Neither one is
+# yours to edit.
 
 BIN  := renpkt$(EXE)
 OBJS := driver.o decode.obj encode.obj checksum.obj
 
+TESTBIN  := contract_test$(EXE)
+TESTOBJS := contract_test.o contract_regs.obj decode.obj encode.obj checksum.obj
+
+# The default goal builds both programs, so a plain `make` leaves the
+# directory ready for run_tests.sh.
+all: $(BIN) $(TESTBIN)
+
 $(BIN): $(OBJS)
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
+$(TESTBIN): $(TESTOBJS)
+	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+
 driver.o: driver.c cdecl.h
+contract_test.o: contract_test.c cdecl.h
 
 decode.obj: decode.asm
 encode.obj: encode.asm
 checksum.obj: checksum.asm
+contract_regs.obj: contract_regs.asm
 
-all: $(BIN)
-
-check: $(BIN)
+check: $(BIN) $(TESTBIN)
 	bash ./run_tests.sh
 
 test: check
 
 clean:
-	rm -f $(BIN) *.obj *.o
+	rm -f $(BIN) $(TESTBIN) *.obj *.o
 
 .PHONY: all check test clean

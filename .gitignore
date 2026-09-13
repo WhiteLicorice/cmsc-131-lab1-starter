@@ -2,3 +2,5 @@
 *.obj
 *.exe
 /renpkt
+/contract_test
+.decode.out

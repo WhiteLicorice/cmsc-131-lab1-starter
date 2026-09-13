@@ -11,6 +11,14 @@
  * The three routines you implement are declared at the bottom, with the
  * struct they share. Everything else in here is the part the activity is
  * not about.
+ *
+ * The activity covers one 20-byte IPv4 base header with an IHL of 5. The
+ * encoder writes that header and no other. IPv4 options are outside the
+ * activity, so no option bytes are parsed or produced.
+ *
+ * Every numeric option is checked against the width of its field, so a
+ * value that cannot fit is refused at the command line instead of being
+ * silently truncated by the assembler's masks.
  */
 
 #include <stdio.h>
@@ -122,8 +130,9 @@ static int read_file(const char *path, unsigned char *buf, size_t len)
         return 0;
     }
     size_t got = fread(buf, 1, len, f);
+    int bad = (got != len) || ferror(f);
     fclose(f);
-    if (got != len) {
+    if (bad) {
         fprintf(stderr, "renpkt: %s: expected %u bytes, read %u\n",
                 path, (unsigned)len, (unsigned)got);
         return 0;
@@ -139,8 +148,9 @@ static int write_file(const char *path, const unsigned char *buf, size_t len)
         return 0;
     }
     size_t wrote = fwrite(buf, 1, len, f);
+    int bad = ferror(f);
     fclose(f);
-    if (wrote != len) {
+    if (bad || wrote != len) {
         fprintf(stderr, "renpkt: wrote %u of %u bytes to %s\n",
                 (unsigned)wrote, (unsigned)len, path);
         return 0;
@@ -148,19 +158,91 @@ static int write_file(const char *path, const unsigned char *buf, size_t len)
     return 1;
 }
 
+/*
+ * parse_u32 - read one whole token as an unsigned decimal number.
+ *
+ * The token has to be complete. Digits, and nothing but digits. A leading
+ * sign, trailing text, an empty token, and a value above limit are all
+ * refused. strtoul accepts "12abc" and hands back 12, which is how a typo
+ * becomes a silently different header. The limit is checked after every
+ * digit, so the running value cannot overflow before the check.
+ */
+static int parse_u32(const char *s, unsigned long limit, unsigned int *out)
+{
+    unsigned long value = 0;
+    const char *p = s;
+
+    if (*p == '\0') return 0;
+    for (; *p; p++) {
+        if (*p < '0' || *p > '9') return 0;
+        value = value * 10 + (unsigned long)(*p - '0');
+        if (value > limit) return 0;
+    }
+    *out = (unsigned int)value;
+    return 1;
+}
+
+/*
+ * need_number - parse a numeric option value or stop with a message.
+ *
+ * Every numeric option is bounded by the width of the field it feeds, so a
+ * value the field cannot hold is refused here. The limits are listed in
+ * the usage text and in the manual's field table.
+ */
+static unsigned int need_number(const char *name, const char *text, unsigned long limit)
+{
+    unsigned int value;
+    if (!parse_u32(text, limit, &value)) {
+        fprintf(stderr, "renpkt: %s: bad value: %s (0 to %lu)\n", name, text, limit);
+        exit(2);
+    }
+    return value;
+}
+
+/*
+ * parse_octets - read a dotted-quad address into four bytes.
+ *
+ * Four decimal numbers separated by dots, each from 0 to 255, and nothing
+ * after the fourth. The whole token must be consumed. sscanf alone would
+ * accept "10.0.0.junk" and "10.0.0.1.2", because it stops after the fourth
+ * conversion and never looks at the rest.
+ */
 static int parse_octets(const char *s, unsigned char *out)
 {
-    unsigned a, b, c, d;
-    if (sscanf(s, "%u.%u.%u.%u", &a, &b, &c, &d) != 4 ||
-        a > 255 || b > 255 || c > 255 || d > 255) {
-        fprintf(stderr, "renpkt: bad address: %s\n", s);
-        return 0;
+    const char *p = s;
+    int part;
+
+    for (part = 0; part < 4; part++) {
+        unsigned long value = 0;
+        if (part > 0) {
+            if (*p != '.') return 0;
+            p++;
+        }
+        if (*p < '0' || *p > '9') return 0;
+        while (*p >= '0' && *p <= '9') {
+            value = value * 10 + (unsigned long)(*p - '0');
+            if (value > 255) return 0;
+            p++;
+        }
+        out[part] = (unsigned char)value;
     }
-    out[0] = (unsigned char)a;
-    out[1] = (unsigned char)b;
-    out[2] = (unsigned char)c;
-    out[3] = (unsigned char)d;
-    return 1;
+    return *p == '\0';
+}
+
+/* The options that carry a value, so a missing value is named instead of
+ * falling through to the generic usage message. */
+static const char *const value_options[] = {
+    "-o", "--ttl", "--proto", "--len", "--id", "--dscp", "--ecn",
+    "--frag", "--flags", "--src", "--dst", NULL
+};
+
+static int takes_value(const char *name)
+{
+    int k;
+    for (k = 0; value_options[k]; k++) {
+        if (!strcmp(name, value_options[k])) return 1;
+    }
+    return 0;
 }
 
 static void usage(void)
@@ -170,7 +252,10 @@ static void usage(void)
         "  renpkt --decode FILE\n"
         "  renpkt --encode [--ttl N] [--proto N] [--len N] [--id N]\n"
         "                 [--dscp N] [--ecn N] [--frag N] [--flags N]\n"
-        "                 [--src A.B.C.D] [--dst A.B.C.D] [--df] [--mf] -o FILE\n");
+        "                 [--src A.B.C.D] [--dst A.B.C.D] [--df] [--mf] -o FILE\n"
+        "\n"
+        "  --ttl 0-255   --proto 0-255   --len 0-65535   --id 0-65535\n"
+        "  --dscp 0-63   --ecn 0-3       --frag 0-8191   --flags 0-7\n");
     exit(2);
 }
 
@@ -207,29 +292,38 @@ static void cmd_encode(int argc, char **argv)
         if (!strcmp(argv[i], "-o") && i + 1 < argc) {
             out = argv[++i];
         } else if (!strcmp(argv[i], "--ttl") && i + 1 < argc) {
-            f.ttl = (unsigned)atoi(argv[++i]);
+            f.ttl = need_number("--ttl", argv[++i], 255);
         } else if (!strcmp(argv[i], "--proto") && i + 1 < argc) {
-            f.protocol = (unsigned)atoi(argv[++i]);
+            f.protocol = need_number("--proto", argv[++i], 255);
         } else if (!strcmp(argv[i], "--len") && i + 1 < argc) {
-            f.total_length = (unsigned)atoi(argv[++i]);
+            f.total_length = need_number("--len", argv[++i], 65535);
         } else if (!strcmp(argv[i], "--id") && i + 1 < argc) {
-            f.identification = (unsigned)atoi(argv[++i]);
+            f.identification = need_number("--id", argv[++i], 65535);
         } else if (!strcmp(argv[i], "--dscp") && i + 1 < argc) {
-            f.dscp = (unsigned)atoi(argv[++i]);
+            f.dscp = need_number("--dscp", argv[++i], 63);
         } else if (!strcmp(argv[i], "--ecn") && i + 1 < argc) {
-            f.ecn = (unsigned)atoi(argv[++i]);
+            f.ecn = need_number("--ecn", argv[++i], 3);
         } else if (!strcmp(argv[i], "--frag") && i + 1 < argc) {
-            f.fragment_offset = (unsigned)atoi(argv[++i]);
+            f.fragment_offset = need_number("--frag", argv[++i], 8191);
         } else if (!strcmp(argv[i], "--flags") && i + 1 < argc) {
-            f.flags = (unsigned)atoi(argv[++i]);
+            f.flags = need_number("--flags", argv[++i], 7);
         } else if (!strcmp(argv[i], "--src") && i + 1 < argc) {
-            if (!parse_octets(argv[++i], f.src)) exit(1);
+            if (!parse_octets(argv[++i], f.src)) {
+                fprintf(stderr, "renpkt: bad address: %s\n", argv[i]);
+                exit(2);
+            }
         } else if (!strcmp(argv[i], "--dst") && i + 1 < argc) {
-            if (!parse_octets(argv[++i], f.dst)) exit(1);
+            if (!parse_octets(argv[++i], f.dst)) {
+                fprintf(stderr, "renpkt: bad address: %s\n", argv[i]);
+                exit(2);
+            }
         } else if (!strcmp(argv[i], "--df")) {
             f.flags |= 0x2;   /* bit 6 of the header is the field's bit 1 */
         } else if (!strcmp(argv[i], "--mf")) {
             f.flags |= 0x1;   /* bit 5 of the header is the field's bit 0 */
+        } else if (takes_value(argv[i])) {
+            fprintf(stderr, "renpkt: %s needs a value\n", argv[i]);
+            exit(2);
         } else {
             usage();
         }
