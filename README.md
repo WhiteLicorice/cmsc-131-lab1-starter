@@ -99,6 +99,17 @@ Keep each part short. Update it when the plan changes.
 What the tool must read, what it must write, and which field is the hard
 one. State the header layout in your own words.
 
+The header layout is as follows
+#### Version
+This encompasses the first 4 bits of the header. Since the program deals with
+IPv4 addresses, then it is expected to contain '4'.
+
+#### IHL (Internet Header Length)
+This contains the header length of the header in 32- bit words. This is multiplied
+by 4 to get the amount of bytes. It is expected to only contain '5' for the purposes of this program.
+
+#### DSCP (Differentiated Services Code Point)
+
 ### Solution architecture
 
 How the three routines split the work. Which registers each routine uses,
@@ -111,7 +122,7 @@ who owns it.
 
 | Week | Goal | Owner |
 |---|---|---|
-| 1 | | |
+| 1 | Design Documentation| Julian Medalla |
 | 2 | | |
 | 3 | | |
 | 4 | Defense | |
@@ -125,7 +136,7 @@ share one. The commit history must agree with this table.
 | Subsystem | Owner |
 |---|---|
 | Decode path (`decode.asm`) | |
-| Encode path (`encode.asm`) | |
+| Encode path (`encode.asm`) | Julian Medalla |
 | Checksum and tests (`checksum.asm`, `tests/`) | |
 
 ## Quirks and Issues
