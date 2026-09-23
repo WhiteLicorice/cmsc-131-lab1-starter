@@ -124,9 +124,9 @@ share one. The commit history must agree with this table.
 
 | Subsystem | Owner |
 |---|---|
-| Decode path (`decode.asm`) | |
-| Encode path (`encode.asm`) | |
-| Checksum and tests (`checksum.asm`, `tests/`) | |
+| Decode path (`decode.asm`) | EJ Tolentino |
+| Encode path (`encode.asm`) | Julian Medalla |
+| Checksum and tests (`checksum.asm`, `tests/`) | JB Aparicio |
 
 ## Quirks and Issues
 
