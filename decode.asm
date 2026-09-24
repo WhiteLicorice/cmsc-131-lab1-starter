@@ -62,6 +62,19 @@ _decode_header:
         ; the struct, and driver.c does the rest.
         ;
 
+        mov     esi, [ebp+8]     ; get the hdr
+        mov     edi, [ebp+12]    ; get the out
+
+        movzx   eax, byte [esi]  ; gets the first byte
+        mov     edx, eax         ; copies the first byte
+
+        and     edx, 0x0F        ; keep low 4 bits for IHL
+        mov     [edi+4], edx     ; saves IHL
+
+        shr     eax, 4           ; shifts right to get the high 4 bits
+        and     eax, 0x0F        ; keep only 4 bits
+        mov     [edi+0], eax     ; saves version
+
         popa
         mov     eax, 0
         leave
