@@ -102,7 +102,7 @@ not edits.
 In Bytes 6-7, they are divided into the flags and fragment offset. Specifically, byte 6’s top three bytes (bits 7-5) indicate the flag for DF (bit 6) and MF (bit 5). Bit 7 is reserved as 0. Byte 6’s remaining bits are grouped with all the bits in byte 7 to form the Fragment Offset. This means Fragment Offset will have 13 bits, which cannot be read with mov. A shift and mask is necessary for this.
 
 **State the header layout in your own words.**\
-The IPv4 header is a fixed 20 bytes packed together, and they can be interpreted depending on their position in the 20-byte structure. Their meanings are as follows:\
+The IPv4 header is a fixed 20 bytes packed together, and they can be interpreted depending on their position in the 20-byte structure. Their meanings are as follows:
 - Bytes 0-3
      - Byte 0: Version, IHL
      - Byte 1: DSCP, ECN
@@ -120,6 +120,30 @@ The IPv4 header is a fixed 20 bytes packed together, and they can be interpreted
     - Source Address (4 separate one-byte octets)
 - Bytes 16-19
     - Destination Address (4 separate one-byte octets)
+
+**Five obligations of the cdecl routine**
+1. Preserve `ebx`, `esi`,  `edi` and `ebp`; `eax`, `ecx` and `edx` are caller-saved.
+2. Return the result in `eax` (`ax` for 16-bit values for `ip_checksum`).
+3. Balance the stack as every push inside the routine is popped before `ret`. 
+4. Leave arguments alone because the caller pushed them, so the caller also cleans them up (`add esp, N`) after the call returns. 
+5. Return via `ret`.
+
+**Full trace: `decode_header(hdr, &f)`**
+| # | Instruction | Effect | esp after |
+|---|---|---|---|
+| 1 | `push dword [address of f]` | 2nd arg pushed first (right-to-left) | `0x0FFC` |
+| 2 | `push dword [address of hdr]` | 1st arg pushed last | `0x0FF8` |
+| 3 | `call _decode_header` | return address pushed automatically | `0x0FF4` |
+| 4 | `push ebp` | save caller's frame pointer | `0x0FF0` |
+| 5 | `mov ebp, esp` | set up new frame; esp unchanged | `0x0FF0` |
+| 6 | — | `[ebp+8] = hdr`, `[ebp+12] = &f` | `0x0FF0` |
+| 7 | `push` any callee-saved regs used | e.g. `ebx`, `esi`, `edi` | drops by 4 per push |
+| 8 | *(routine body runs)* | decode/encode logic | unchanged |
+| 9 | set `eax` | return value goes here | unchanged |
+| 10 | `pop` those regs, reverse order | undo step 7 | back to `0x0FF0` |
+| 11 | `leave` | `mov esp, ebp` then `pop ebp` | `0x0FF4` |
+| 12 | `ret` | pops return address into `eip` | `0x0FF8` |
+| 13 | *(back in driver.c)* `add esp, 8` | caller removes its 2 pushed args | `0x1000` |
 
 ### Solution architecture
 
