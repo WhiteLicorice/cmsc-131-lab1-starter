@@ -98,6 +98,28 @@ not edits.
 | Decode | Reading the 20 bytes of the 13 fields provided in `tests/NAME.bin` by the sample codes or encoded by the encoder. | From the 20 bytes it read, decode must write it in readable form, and the verification of the checksum with its validity printed out in the terminal. |
 | Encode | Reading the command-line field values inputted individually. | The 13 field values from the command-line packed back to the 20-byte format of IPv4. The newly built header is stored in `NAME.bin`.
 
+**Which field is the hard one?** \
+In Bytes 6-7, they are divided into the flags and fragment offset. Specifically, byte 6’s top three bytes (bits 7-5) indicate the flag for DF (bit 6) and MF (bit 5). Bit 7 is reserved as 0. Byte 6’s remaining bits are grouped with all the bits in byte 7 to form the Fragment Offset. This means Fragment Offset will have 13 bits, which cannot be read with mov. A shift and mask is necessary for this.
+
+**State the header layout in your own words.**\
+The IPv4 header is a fixed 20 bytes packed together, and they can be interpreted depending on their position in the 20-byte structure. Their meanings are as follows:\
+- Bytes 0-3
+     - Byte 0: Version, IHL
+     - Byte 1: DSCP, ECN
+    - Bytes 2-3: Total Length (grouped as a 2-byte number)
+- Bytes 4-7
+    - Bytes 4-5: Identification (grouped as a 2-byte number)
+    - Bytes 6-7: Flags + Fragment Offset
+    - Byte 6 is divided into two different fields:
+        - Top 3 bits of byte 6 are Flags, while its remaining bits are grouped with byte 7 to form the Fragment Offset.
+- Bytes 8-11
+    - Byte 8: TTL
+    - Byte 9: Protocol
+    - Byte 10-11: Header Checksum
+- Bytes 12-15
+    - Source Address (4 separate one-byte octets)
+- Bytes 16-19
+    - Destination Address (4 separate one-byte octets)
 
 ### Solution architecture
 
@@ -107,6 +129,7 @@ To implement these routines, the following registers will be used for each routi
 - `decode_header`: `ESI` for the input header, `EDI` for the output struct.
 - `encode_header`: `EDI` for the input struct, `ESI` for the output header. 
 - `ip_checksum`: `ESI` for the current header position, `ECX` for the remaining length, `EAX` for the checksum accumulator. 
+
 Temporary values use caller-saved registers (`EAX`, `ECX`, `EDX`) where possible, and callee-saved registers are preserved.
 
 The routines access the `ipv4_fields` structure using the following offsets:
