@@ -101,8 +101,30 @@ not edits.
 
 ### Solution architecture
 
-How the three routines split the work. Which registers each routine uses,
-and how the struct offsets in `driver.c` map to the fields.
+The `renpkt` tool is divided into three assembly routines: `decode_header`, `encode_header`, and `ip_checksum`. `decode_header` reads the 20-byte IPv4 header, extracts the 13 supported fields using shifts and masks, and stores them in `ipv4_fields`. `encode_header`, on the other hand, performs the same operation in reverse by reading the fields from `ipv4_fields` and constructing the 20-byte header in IPv4 network byte order (big-endian). Lastly, `ip_checksum` processes the header as 16-bit big-endian words and computes the one's-complement checksum with end-around carry. 
+
+To implement these routines, the following registers will be used for each routine:
+`decode_header`: `ESI` for the input header, `EDI` for the output struct.
+`encode_header`: `EDI` for the input struct, `ESI` for the output header. 
+`ip_checksum`: `ESI` for the current header position, `ECX` for the remaining length, `EAX` for the checksum accumulator. 
+Temporary values use caller-saved registers (`EAX`, `ECX`, `EDX`) where possible, and callee-saved registers are preserved.
+
+The routines access the `ipv4_fields` structure using the following offsets:
+| Offset | Field |
+|---:|---|
+| `+0` | `version` |
+| `+4` | `ihl` |
+| `+8` | `dscp` |
+| `+12` | `ecn` |
+| `+16` | `total_length` |
+| `+20` | `identification` |
+| `+24` | `flags` |
+| `+28` | `fragment_offset` |
+| `+32` | `ttl` |
+| `+36` | `protocol` |
+| `+40` | `checksum` |
+| `+44` | `src[0..3]` |
+| `+48` | `dst[0..3]` |
 
 ### Timeline
 
