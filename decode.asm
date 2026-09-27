@@ -62,6 +62,24 @@ _decode_header:
         ; the struct, and driver.c does the rest.
         ;
 
+        ; Week 1: Decode Prototype
+
+        ; byte 0: version and ihl
+        mov     esi, [ebp+8]            ; hdr
+        mov     edi, [ebp+12]           ; out, ipv4_fields
+
+        ; shifting and masking
+        movzx   eax, byte [esi+0]       ; get byte 0
+        shr     eax, 4                  ; shift right by 4   
+        
+        movzx   ebx, byte [esi+0]       ; get byte 0
+        and     ebx, 0x0F               ; masking the ihl in the low nibble                   
+
+        mov     [edi+0], eax            ; storing version to out
+        mov     [edi+4], ebx            ; storing ihl to out
+
+        ; byte 1 - to be continued lol
+
         popa
         mov     eax, 0
         leave
