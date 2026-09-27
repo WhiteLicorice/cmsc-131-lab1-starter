@@ -89,15 +89,15 @@ not edits.
 ---
 
 ## Design Notes
-
-Complete this section before the Week 1 progress report. The syllabus asks
-for problem analysis, a solution architecture, and an estimated timeline.
-Keep each part short. Update it when the plan changes.
-
 ### Problem analysis
 
-What the tool must read, what it must write, and which field is the hard
-one. State the header layout in your own words.
+**What it writes and what it reads?**
+
+|  | Reads | Writes |
+|---|---|---|
+| Decode | Reading the 20 bytes of the 13 fields provided in `tests/NAME.bin` by the sample codes or encoded by the encoder. | From the 20 bytes it read, decode must write it in readable form, and the verification of the checksum with its validity printed out in the terminal. |
+| Encode | Reading the command-line field values inputted individually. | The 13 field values from the command-line packed back to the 20-byte format of IPv4. The newly built header is stored in `NAME.bin`.
+
 
 ### Solution architecture
 
@@ -106,27 +106,20 @@ and how the struct offsets in `driver.c` map to the fields.
 
 ### Timeline
 
-One line per week. Name the subsystem each week finishes and the member
-who owns it.
-
 | Week | Goal | Owner |
 |---|---|---|
-| 1 | | |
-| 2 | | |
-| 3 | | |
-| 4 | Defense | |
+| 1 | The C boundary, Design Notes, Prototype for decode | All |
+| 2 | Complete `decode.asm` path and `encode.asm` path (end to end) | Carreon, Kaindoy |
+| 3 | Checksum and tests(`checksum.asm`, `tests/`), `make check` passes all tests and round trip, Quirks and Issues of `README.md` | Cambel, De Guzman|
+| 4 | Defense | All |
 
 ## Subsystem Ownership
 
-Complete this section before the Week 1 progress report. The manual lists
-the three subsystems. Each member owns one. In a group of four, two members
-share one. The commit history must agree with this table.
-
 | Subsystem | Owner |
 |---|---|
-| Decode path (`decode.asm`) | |
-| Encode path (`encode.asm`) | |
-| Checksum and tests (`checksum.asm`, `tests/`) | |
+| Decode path (`decode.asm`) | Carreon |
+| Encode path (`encode.asm`) | Kaindoy |
+| Checksum and tests (`checksum.asm`, `tests/`) | Cambel, De Guzman |
 
 ## Quirks and Issues
 
