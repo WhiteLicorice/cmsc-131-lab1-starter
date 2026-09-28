@@ -94,6 +94,24 @@ Complete this section before the Week 1 progress report. The syllabus asks
 for problem analysis, a solution architecture, and an estimated timeline.
 Keep each part short. Update it when the plan changes.
 
+| Field | Size | Description |
+|---|---|---|
+| Version | 4 | IPv4 is used, therefore this value is always 4 in decimal (0100) |
+| Header Length (IHL) | 4 bit | This 4-bit field tells us the length of the IP header in 32-bit increments. With 4 bits in 32-bit increments, the max header length we can make with this is 60 bytes. This is the absolute limit of the header length.|
+| Type of Service | 6 bits(DSCP), 2 bits(ECN) |DSCP is used to tell what priority the packet has. The ECN field enables congestion notification, which allows senders to slow down before packet loss.  |
+| Total Length: | 16 bits | indicates  the entire size of the IP packet (header and data) in bytes [100(decimal) => 100 bytes]. If you have no data, the size is 20 bytes. |
+| Identification | 16 bits | If fragmented, the packet will use this to identify whih IP packet it belongs to. All fragments of a packet use the same ID |
+| IP Flags | 3 bits  | 1st bit is reserved and MUST always be set to 0. 2nd bit (Don't Fragment [DF]), means that the packet should not be fragmented by the router. 3rd bit (More Fragments [MF]) means that fragments can follow. |
+| Fragment Offset | 13 bits | Specifies the position of the fragment in the original fragmented IP packet, it is measured in 8-byte units. (decimal value of bits) * 8 = (starting point of data) |
+| Time to Live TTL | 8 bits  | A sort of timer "hop count" that decrements each time the packet passes through a router, it times out if it reaches 0. |
+| Protocol | 8 bits | Tells us which protocol the packet uses. |
+| Header Checksum | 16 bits | Can be used to detect errors in the header but does not validate the data if ever |
+| Source Address | 32 bits | The sender's IP address |
+| Destination Address | 32 bits | The destination IP address |
+| Checksum Validation | ---? | Used to see if the checksum was valid, not included in the packet. just in the C print |
+Reference: https://networklessons.com/ip-routing/ipv4-packet-header
+
+
 ### Problem analysis
 
 What the tool must read, what it must write, and which field is the hard
