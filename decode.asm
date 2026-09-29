@@ -96,6 +96,16 @@ _decode_header:
         mov     [edi+0], ebx
         mov     [edi+4], eax
 
+        ; byte 1 fields DSCP & ECN
+        movzx   eax, byte [esi + 1]     ; eax = byte 1
+
+        mov     ebx, eax        ; ebx = DSCP (top 6 bits)
+        shr     ebx, 2
+        mov     [edi + 8], ebx
+
+        and     eax, ECN_MASK   ; eax = ECN (bottom 2 bits)
+        mov     [edi + 12], eax
+
         popa
         mov     eax, 0
         leave
