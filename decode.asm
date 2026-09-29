@@ -127,6 +127,49 @@ _decode_header:
         and     eax, FRAG_MASK          ; mask the low 13 bits
         mov     [edi + 28], eax
 
+        ; byte 8 TTL
+        movzx   eax, byte [esi + 8]
+        and     eax, TTL_MASK           ; mask 8 bits
+
+        mov     [edi + 32], eax
+
+        ; byte 9 protocol
+        movzx   eax, byte [esi + 9]
+        and     eax, PROTO_MASK         ; mask 8 bits
+
+        mov     [edi + 36], eax
+
+        ; byte 10-11 header-checksum
+        combine_endian  esi, 10, eax
+
+        mov     [edi + 40], eax
+
+        ; byte 12-15 source address
+        mov     al, byte [esi + 12]
+        mov     [edi + 44], al
+
+        mov     al, byte [esi + 13]
+        mov     [edi + 45], al
+
+        mov     al, byte [esi + 14]
+        mov     [edi + 46], al
+
+        mov     al, byte [esi + 15]
+        mov     [edi + 47], al
+
+        ; byte 16-19 destination address
+        mov     al, byte [esi + 16]
+        mov     [edi + 48], al
+
+        mov     al, byte [esi + 17]
+        mov     [edi + 49], al
+
+        mov     al, byte [esi + 18]
+        mov     [edi + 50], al
+
+        mov     al, byte [esi + 19]
+        mov     [edi + 51], al
+
         popa
         mov     eax, 0
         leave
