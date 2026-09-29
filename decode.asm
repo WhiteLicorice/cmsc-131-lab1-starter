@@ -26,6 +26,26 @@
 ; Return in eax (driver.c ignores it here, so returning 0 is fine).
 ;
 
+; 4 bits to mask
+%define IHL_MASK        0x0F
+; 2 bits to mask 0000 0011
+%define ECN_MASK        0x03
+; 3 bits to mask 0000 0111
+%define FLAG_MASK       0x07
+; 13 bits to mask 0001 1111 1111 1111
+%define FRAG_MASK       0x1FFF
+; 12 bits to mask 1111 1111
+%define TTL_MASK        0xFF
+; 12 bits to mask 1111 1111
+%define PROTO_MASK      0xFF
+
+%macro combine_endian 3
+        movzx   %3, byte [%1 + %2] ; high byte
+        shl     %3, 8
+        movzx   ebx, byte [%1 + %2 + 1] ; low byte
+        or      %3, ebx
+%endmacro
+
 ; Windows C puts a leading underscore on every exported name. Linux C does
 ; not. The Makefile passes -d ELF_TYPE on Linux. This block then respells
 ; the names below to match. asm_io.inc does the same for _asm_main in the
@@ -67,10 +87,10 @@ _decode_header:
         mov     edi, [ebp+12]
 
         ; decode hdr for version and IHL
-        movzx   eax, byte [esi]
+        movzx   eax, byte [esi]         ; eax = byte 0
         mov     ebx, eax
-        shr     ebx, 4
-        and     eax, 0x0F
+        shr     ebx, 4                  ; ebx = version (high nibble)
+        and     eax, IHL_MASK               ; eax = IHL (low nibble)
 
         ; fill the struct
         mov     [edi+0], ebx
