@@ -106,6 +106,27 @@ _decode_header:
         and     eax, ECN_MASK   ; eax = ECN (bottom 2 bits)
         mov     [edi + 12], eax
 
+        ; byte 2-3
+        combine_endian  esi, 2, eax     ; esi holds address pointer, 2 is starting byte, put in eax
+        mov     [edi + 16], eax         ; total length
+
+        ; byte 4-5
+        combine_endian  esi, 4, eax
+        mov     [edi + 20], eax         ; identification
+
+        ; byte 6 flags
+        combine_endian  esi, 6, eax
+
+        mov     ebx, eax                ; eax needed for fragment offset
+        shr     ebx, 13                 ; top 3 bits gets shifted down
+        and     ebx, FLAG_MASK
+
+        mov     [edi + 24], ebx
+
+        ; byte 6-7 fragment offset
+        and     eax, FRAG_MASK          ; mask the low 13 bits
+        mov     [edi + 28], eax
+
         popa
         mov     eax, 0
         leave
