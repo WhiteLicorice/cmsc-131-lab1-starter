@@ -62,7 +62,48 @@ _ip_checksum:
         ; enough. Leave the answer in ax when you return.
         ;
 
+        ; eax = 32-bit accumulator
+        ; ecx = remaining length
+        ; esi = pointer to header
+
+        xor     ax, eax
+        mov     ecx, [ebp + 12]
+        mov     esi, [ebp+8]
+
+.sum_loop:
+        ; Build one 16-bit big-endian word:
+        ; word = (hdr[i] << 8) | hdr[i+1]
+
+        movzx   edx, byte [esi]
+        shl     edx, 8
+
+        movzx   edx, byte [esi+1]
+        or      edx, ebx
+
+        add     eax, edx
+
+        add     esi, 2
+        sub     ecx, 2
+        jnz     .sum_loop
+
+.fold:
+        mov     edx, eax
+        shr     edx, 16
+        and     eax, 0xFFFF
+        add     eax, edx
+
+        cmp     eax, 0xFFFF
+        ja      .fold
+
+        not     ax
+
+        ; Preserve the calculated return value across pop
+
+        push eax
         popa
+        pop eax
+
+
         mov     eax, 0
         leave
         ret
