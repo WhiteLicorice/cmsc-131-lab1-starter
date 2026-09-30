@@ -97,13 +97,13 @@ _ip_checksum:
 
         not     ax
 
-        ; Preserve the calculated return value across popa
+        ; Preserve the calculated return value across pop
 
         push eax
         popa
         pop eax
 
-        
+
         mov     eax, 0
         leave
         ret
