@@ -72,6 +72,9 @@ _ip_checksum:
         mov     ecx, [ebp + 12]
         mov     esi, [ebp+8]
 
+        cmp     ecx, 0
+        jle    .fold
+
 .sum_loop:
         ; Build one 16-bit big-endian word:
         ; word = (hdr[i] << 8) | hdr[i+1]
