@@ -40,7 +40,9 @@ segment .text
         global  _ip_checksum
 _ip_checksum:
         enter   0,0
-        pusha
+
+        push    ebx
+        push    esi
 
         ;
         ; TODO: the checksum loop.
@@ -99,9 +101,8 @@ _ip_checksum:
 
         ; Preserve the calculated return value across pop
 
-        mov     [esp + 28], eax
-
-        popa
+        pop     esi
+        pop     ebx
 
         leave
         ret
