@@ -110,6 +110,19 @@ _decode_header:
  
         and     eax, 0x1FFF            ; mask 13 bits 
         mov     [edi+28], eax          ; fragment_offset
+        
+        ; byte 8: ttl, byte 9: protocol
+        movzx   eax, byte [esi+8]
+        mov     [edi+32], eax          ; ttl
+        movzx   eax, byte [esi+9]
+        mov     [edi+36], eax          ; protocol
+ 
+        ; bytes 10-11: header checksum, big-endian
+        movzx   eax, byte [esi+10]    
+        shl     eax, 8                  ; moves up for 8 bits
+        movzx   edx, byte [esi+11]     
+        or      eax, edx                ; merge
+        mov     [edi+40], eax          ; header checksum
 
         popa
         mov     eax, 0
