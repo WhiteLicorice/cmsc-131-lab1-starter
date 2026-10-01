@@ -97,6 +97,14 @@ _encode_header:
         or      eax, ebx; combine
         mov     [edi+1], al ; write byte to hdr[1]
 
+
+        ; Bytes 2-3: Total Length (16 bits, big-endian)
+        mov     eax, [esi+16]
+        mov     ebx, eax
+        shr     ebx, HI_BYTE_SHIFT ; shift of one length to the right
+        mov     [edi+2], bl        ; high byte
+        mov     [edi+3], al        ; low byte
+
         popa
         mov     eax, 0
         leave
