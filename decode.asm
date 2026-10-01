@@ -99,6 +99,13 @@ _decode_header:
         or      eax, ebx
         mov     [edi+16], eax
 
+        ; Bytes 4-5: Identification (16 bits)
+        movzx   eax, byte [esi+4]  ; high byte
+        shl     eax, 8
+        movzx   ebx, byte [esi+5]  ; low byte
+        or      eax, ebx
+        mov     [edi+20], eax
+
         popa
         mov     eax, 0
         leave
