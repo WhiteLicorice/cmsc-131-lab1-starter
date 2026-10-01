@@ -137,6 +137,26 @@ _decode_header:
         or      eax, ebx
         mov     [edi+40], eax
 
+        ; Bytes 12-15: Source Address (32 bits)
+        mov     al, [esi+12]
+        mov     [edi+44], al
+        mov     al, [esi+13]
+        mov     [edi+45], al
+        mov     al, [esi+14]
+        mov     [edi+46], al
+        mov     al, [esi+15]
+        mov     [edi+47], al
+
+        ; Bytes 16-19: Destination Address (32 bits)
+        mov     al, [esi+16]
+        mov     [edi+48], al
+        mov     al, [esi+17]
+        mov     [edi+49], al
+        mov     al, [esi+18]
+        mov     [edi+50], al
+        mov     al, [esi+19]
+        mov     [edi+51], al
+
         popa
         mov     eax, 0
         leave
