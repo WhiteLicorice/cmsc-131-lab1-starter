@@ -134,6 +134,11 @@ _encode_header:
         mov     eax, [esi+36]
         mov     [edi+9], al
 
+        ; Bytes 10-11: Header Checksum, 0 first
+        ; skipped +40 since we calc it instead of copying it to the strcut
+        mov     byte [edi+10], 0
+        mov     byte [edi+11], 0
+
         popa
         mov     eax, 0
         leave
