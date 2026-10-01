@@ -130,6 +130,10 @@ _encode_header:
         mov     eax, [esi+32]
         mov     [edi+8], al
 
+        ; Byte 9: Protocol (8 bits)
+        mov     eax, [esi+36]
+        mov     [edi+9], al
+
         popa
         mov     eax, 0
         leave
