@@ -86,6 +86,17 @@ _encode_header:
         or      eax, ebx ;merge them both together
         mov     [edi+0], al ; write byte to hdr[0]
 
+
+
+        ; Byte 1: DSCP (bits 7-2) | ECN (bits 1-0)
+        mov     eax, [esi+8]       ; dscp
+        and     eax, DSCP_MASK
+        shl     eax, DSCP_SHIFT
+        mov     ebx, [esi+12]      ; ecn
+        and     ebx, ECN_MASK
+        or      eax, ebx; combine
+        mov     [edi+1], al ; write byte to hdr[1]
+
         popa
         mov     eax, 0
         leave
