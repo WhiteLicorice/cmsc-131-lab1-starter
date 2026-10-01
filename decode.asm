@@ -35,6 +35,15 @@
   section .note.GNU-stack noalloc noexec nowrite progbits
 %endif
 
+; Field shifts and masks. A mask has one bit set per bit of field width.
+%define VERSION_SHIFT   4       ; version is the high nibble of byte 0
+%define IHL_MASK        0x0F    ; IHL is the low 4 bits of byte 0
+%define DSCP_SHIFT      2       ; DSCP is the high 6 bits of byte 1
+%define ECN_MASK        0x03    ; ECN is the low 2 bits of byte 1
+%define FLAGS_SHIFT     13      ; flags sit above the 13-bit fragment offset
+%define FLAGS_MASK      0x07    ; flags are 3 bits wide
+%define FRAG_MASK       0x1FFF  ; offset is 13 bits: 5 from byte 6, 8 from byte 7
+
 segment .text
         global  _decode_header
 _decode_header:
@@ -71,13 +80,91 @@ _decode_header:
 
         ; extract version
         mov     eax, ebx
-        shr     eax, 4
+        shr     eax, VERSION_SHIFT
         mov     [edi+0], eax
 
         ; extract IHL
         mov     eax, ebx
-        and     eax, 0x0F
+        and     eax, IHL_MASK
         mov     [edi+4], eax
+
+        ; Byte 1: DSCP (bits 7-2) | ECN (bits 1-0)
+        movzx   ebx, byte [esi+1]  ; ebx = byte 1
+
+        ; extract DSCP
+        mov     eax, ebx
+        shr     eax, DSCP_SHIFT
+        mov     [edi+8], eax
+
+        ; extract ECN
+        mov     eax, ebx
+        and     eax, ECN_MASK
+        mov     [edi+12], eax
+
+        ; Bytes 2-3: Total Length (16 bits)
+        movzx   eax, byte [esi+2]  ; high byte
+        shl     eax, 8
+        movzx   ebx, byte [esi+3]  ; low byte
+        or      eax, ebx
+        mov     [edi+16], eax
+
+        ; Bytes 4-5: Identification (16 bits)
+        movzx   eax, byte [esi+4]  ; high byte
+        shl     eax, 8
+        movzx   ebx, byte [esi+5]  ; low byte
+        or      eax, ebx
+        mov     [edi+20], eax
+
+        ; Bytes 6-7: Flags (high 3 bits) | Fragment Offset (low 13 bits)
+        movzx   eax, byte [esi+6]  ; high byte
+        shl     eax, 8
+        movzx   ebx, byte [esi+7]  ; low byte
+        or      eax, ebx
+
+        ; extract Flags
+        mov     ebx, eax
+        shr     ebx, FLAGS_SHIFT
+        and     ebx, FLAGS_MASK
+        mov     [edi+24], ebx
+
+        ; extract Fragment Offset
+        and     eax, FRAG_MASK
+        mov     [edi+28], eax
+
+        ; Byte 8: TTL (8 bits)
+        movzx   eax, byte [esi+8]  ; eax = byte 8
+        mov     [edi+32], eax
+
+        ; Byte 9: Protocol (8 bits)
+        movzx   eax, byte [esi+9]  ; eax = byte 9
+        mov     [edi+36], eax
+
+        ; Bytes 10-11: Header Checksum (16 bits)
+        movzx   eax, byte [esi+10]  ; high byte
+        shl     eax, 8
+        movzx   ebx, byte [esi+11]  ; low byte
+        or      eax, ebx
+        mov     [edi+40], eax
+
+        ; Bytes 12-15: Source Address (32 bits)
+        mov     al, [esi+12]
+        mov     [edi+44], al
+        mov     al, [esi+13]
+        mov     [edi+45], al
+        mov     al, [esi+14]
+        mov     [edi+46], al
+        mov     al, [esi+15]
+        mov     [edi+47], al
+
+        ; Bytes 16-19: Destination Address (32 bits)
+        mov     al, [esi+16]
+        mov     [edi+48], al
+        mov     al, [esi+17]
+        mov     [edi+49], al
+        mov     al, [esi+18]
+        mov     [edi+50], al
+        mov     al, [esi+19]
+        mov     [edi+51], al
 
         popa
         mov     eax, 0
