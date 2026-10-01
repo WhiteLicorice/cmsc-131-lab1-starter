@@ -126,6 +126,10 @@ _encode_header:
         mov     [edi+6], bl        ; high byte
         mov     [edi+7], al        ; low byte
 
+        ; Byte 8: TTL (8 bits)
+        mov     eax, [esi+32]
+        mov     [edi+8], al
+
         popa
         mov     eax, 0
         leave
