@@ -92,6 +92,13 @@ _decode_header:
         and     eax, 0x03
         mov     [edi+12], eax
 
+        ; Bytes 2-3: Total Length (16 bits)
+        movzx   eax, byte [esi+2]  ; high byte
+        shl     eax, 8
+        movzx   ebx, byte [esi+3]  ; low byte
+        or      eax, ebx
+        mov     [edi+16], eax
+
         popa
         mov     eax, 0
         leave
