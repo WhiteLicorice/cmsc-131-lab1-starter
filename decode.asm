@@ -79,6 +79,19 @@ _decode_header:
         and     eax, 0x0F
         mov     [edi+4], eax
 
+        ; Byte 1: DSCP (bits 7-2) | ECN (bits 1-0)
+        movzx   ebx, byte [esi+1]  ; ebx = byte 1
+
+        ; extract DSCP
+        mov     eax, ebx
+        shr     eax, 2
+        mov     [edi+8], eax
+
+        ; extract ECN
+        mov     eax, ebx
+        and     eax, 0x03
+        mov     [edi+12], eax
+
         popa
         mov     eax, 0
         leave
