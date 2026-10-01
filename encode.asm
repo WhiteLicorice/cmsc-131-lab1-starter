@@ -105,6 +105,13 @@ _encode_header:
         mov     [edi+2], bl        ; high byte
         mov     [edi+3], al        ; low byte
 
+        ; Bytes 4-5: Identification (16 bits, big-endian)
+        mov     eax, [esi+20]
+        mov     ebx, eax
+        shr     ebx, HI_BYTE_SHIFT
+        mov     [edi+4], bl        ; high byte
+        mov     [edi+5], al        ; low byte
+
         popa
         mov     eax, 0
         leave
