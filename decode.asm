@@ -97,6 +97,20 @@ _decode_header:
         or      eax, edx                ; merges into one 16-bit
         mov     [edi+20], eax          ; identification
 
+        ; bytes 6-7: six-seven!! flags top 3 bits + fragment offset low 13 bits
+        movzx   eax, byte [esi+6]    
+        shl     eax, 8
+        movzx   edx, byte [esi+7]     
+        or      eax, edx               ; combines into one whole 16-bit word
+ 
+        mov     ebx, eax
+        shr     ebx, 13                ; move top 3 bits down
+        and     ebx, 0x07              ; keep the 3 bits
+        mov     [edi+24], ebx          ; flags
+ 
+        and     eax, 0x1FFF            ; mask 13 bits 
+        mov     [edi+28], eax          ; fragment_offset
+
         popa
         mov     eax, 0
         leave
