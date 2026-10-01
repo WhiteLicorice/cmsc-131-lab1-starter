@@ -111,18 +111,38 @@ _decode_header:
         and     eax, 0x1FFF            ; mask 13 bits 
         mov     [edi+28], eax          ; fragment_offset
         
-        ; byte 8: ttl, byte 9: protocol
+        ; byte 8: ttl 8 bits , byte 9: protocol 8 bits
         movzx   eax, byte [esi+8]
         mov     [edi+32], eax          ; ttl
         movzx   eax, byte [esi+9]
         mov     [edi+36], eax          ; protocol
  
-        ; bytes 10-11: header checksum, big-endian
+        ; bytes 10-11: header checksum, big-endian, 16 bits
         movzx   eax, byte [esi+10]    
         shl     eax, 8                  ; moves up for 8 bits
         movzx   edx, byte [esi+11]     
         or      eax, edx                ; merge
         mov     [edi+40], eax          ; header checksum
+
+        ; bytes 12-15: source address, 32 bits
+        mov     al, [esi+12]
+        mov     [edi+44], al           ; stores as src[0]
+        mov     al, [esi+13]
+        mov     [edi+45], al           ; src[1]
+        mov     al, [esi+14]
+        mov     [edi+46], al           ; src[2]
+        mov     al, [esi+15]
+        mov     [edi+47], al           ; src[3]
+
+        ; bytes 16-19: destination address, 32 bits
+        mov     al, [esi+16]
+        mov     [edi+48], al           ; dst[0]
+        mov     al, [esi+17]
+        mov     [edi+49], al           ; dst[1]
+        mov     al, [esi+18]
+        mov     [edi+50], al           ; dst[2]
+        mov     al, [esi+19]
+        mov     [edi+51], al           ; dst[3]
 
         popa
         mov     eax, 0
