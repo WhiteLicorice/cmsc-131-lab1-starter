@@ -43,28 +43,48 @@
 
 extern _ip_checksum
 
+; Field shifts and masks. A mask has one bit set per bit of field width.
+%define VERSION_MASK    0x0F    ; version is 4 bits, the high nibble of byte 0
+%define VERSION_SHIFT   4
+%define IHL_MASK        0x0F    ; IHL is the low 4 bits of byte 0
+%define DSCP_MASK       0x3F    ; DSCP is 6 bits, the high bits of byte 1
+%define DSCP_SHIFT      2
+%define ECN_MASK        0x03    ; ECN is the low 2 bits of byte 1
+%define FLAGS_MASK      0x07    ; flags are 3 bits wide
+%define FLAGS_SHIFT     13      ; flags sit above the 13-bit fragment offset
+%define FRAG_MASK       0x1FFF  ; fragment offset is the low 13 bits of bytes 6-7
+%define HI_BYTE_SHIFT   8       ; shift a 16-bit field down to reach its high byte
+%define HDR_LEN         20      ; the driver always passes a 20-byte header
+
 segment .text
         global  _encode_header
 _encode_header:
         enter   0,0
         pusha
 
-        ;
-        ; TODO: build the header from the struct.
-        ;
-        ; This is the reverse of decode. Mask each field to its width,
-        ; shift it up to where it lives, or the pieces of a shared byte
-        ; together, then store the byte. The fields that do not straddle
-        ; anything are one store each.
-        ;
-        ; The checksum comes last, after every other byte is written. Write
-        ; bytes 10-11 as zero, call ip_checksum with the header and 20, and
-        ; store its result (in ax) into the field big-endian. Computing it
-        ; before the rest of the header is in place sums whatever garbage
-        ; was in the buffer. ip_checksum preserves ebx, esi, edi, and ebp,
-        ; so a pointer kept in one of those survives the call. eax, ecx, and
-        ; edx do not.
-        ;
+        ; This is the reverse of decode. 
+        ; Mask it to its width, shift it up
+        ; or shift pieces of a shared byte together,
+        ; afterwards then store the byte. 
+
+        ; esi and edi survive the ip_checksum call, so the pointers live there.
+
+
+        ; pointers, opposite to the decode since 
+        ; source first, destination second
+        mov     esi, [ebp+8]       ; first argument (pointer to struct) 
+        mov     edi, [ebp+12]      ; second args( header bytes)
+
+        ; Based on struct 
+
+        ; Byte 0: version (7-4) and IHL (bits 3-0)
+        mov     eax, [esi+0]       ; version, top bits
+        and     eax, VERSION_MASK
+        shl     eax, VERSION_SHIFT
+        mov     ebx, [esi+4]       ; ihl
+        and     ebx, IHL_MASK
+        or      eax, ebx ;merge them both together
+        mov     [edi+0], al ; write byte to hdr[0]
 
         popa
         mov     eax, 0
