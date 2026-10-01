@@ -112,6 +112,20 @@ _encode_header:
         mov     [edi+4], bl        ; high byte
         mov     [edi+5], al        ; low byte
 
+
+        ; Bytes 6-7: Flags (high 3 bits) | Fragment Offset (low 13 bits)
+        mov     eax, [esi+24]      ; flags
+        and     eax, FLAGS_MASK
+        shl     eax, FLAGS_SHIFT      ; shift 13 up (since we occupy bottom of stack)
+        mov     ebx, [esi+28]      ; fragment_offset
+        and     ebx, FRAG_MASK        ; trim to 13 bits
+
+        or      eax, ebx           ; eax = combined 16-bit word
+        mov     ebx, eax
+        shr     ebx, HI_BYTE_SHIFT
+        mov     [edi+6], bl        ; high byte
+        mov     [edi+7], al        ; low byte
+
         popa
         mov     eax, 0
         leave
