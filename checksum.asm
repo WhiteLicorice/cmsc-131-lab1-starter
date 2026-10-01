@@ -99,9 +99,9 @@ _ip_checksum:
 
         ; Preserve the calculated return value across pop
 
-        push eax
+        mov     [esp + 28], eax
+
         popa
-        pop eax
 
         leave
         ret
