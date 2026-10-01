@@ -159,6 +159,22 @@ _encode_header:
         mov     al, [esi+51]
         mov     [edi+19], al
 
+        ; Checksum last, over the finished header with bytes 10-11 zero.
+
+        ;right to left calling, first args call is on the first
+        push    HDR_LEN            ; arg 2: len, on the args of the ip_checksum, 20
+        push    edi                ; arg 1: hdr
+        call    _ip_checksum
+
+        ; Cleaning of hdr len and edi
+        add     esp, 8             ; caller cleans the two pushed args
+
+        
+        ; if 0 both -> valid, else -> corrupted
+        ; Store the 16-bit result big-endian: high byte in 10, low in 11.
+        mov     [edi+10], ah
+        mov     [edi+11], al
+
         popa
         mov     eax, 0
         leave
