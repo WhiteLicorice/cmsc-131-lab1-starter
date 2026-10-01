@@ -126,6 +126,10 @@ _decode_header:
         movzx   eax, byte [esi+8]  ; eax = byte 8
         mov     [edi+32], eax
 
+        ; Byte 9: Protocol (8 bits)
+        movzx   eax, byte [esi+9]  ; eax = byte 9
+        mov     [edi+36], eax
+
         popa
         mov     eax, 0
         leave
