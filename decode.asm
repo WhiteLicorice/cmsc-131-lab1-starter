@@ -35,6 +35,15 @@
   section .note.GNU-stack noalloc noexec nowrite progbits
 %endif
 
+; Field shifts and masks. A mask has one bit set per bit of field width.
+%define VERSION_SHIFT   4       ; version is the high nibble of byte 0
+%define IHL_MASK        0x0F    ; IHL is the low 4 bits of byte 0
+%define DSCP_SHIFT      2       ; DSCP is the high 6 bits of byte 1
+%define ECN_MASK        0x03    ; ECN is the low 2 bits of byte 1
+%define FLAGS_SHIFT     13      ; flags sit above the 13-bit fragment offset
+%define FLAGS_MASK      0x07    ; flags are 3 bits wide
+%define FRAG_MASK       0x1FFF  ; offset is 13 bits: 5 from byte 6, 8 from byte 7
+
 segment .text
         global  _decode_header
 _decode_header:
@@ -71,12 +80,12 @@ _decode_header:
 
         ; extract version
         mov     eax, ebx
-        shr     eax, 4
+        shr     eax, VERSION_SHIFT
         mov     [edi+0], eax
 
         ; extract IHL
         mov     eax, ebx
-        and     eax, 0x0F
+        and     eax, IHL_MASK
         mov     [edi+4], eax
 
         ; Byte 1: DSCP (bits 7-2) | ECN (bits 1-0)
@@ -84,12 +93,12 @@ _decode_header:
 
         ; extract DSCP
         mov     eax, ebx
-        shr     eax, 2
+        shr     eax, DSCP_SHIFT
         mov     [edi+8], eax
 
         ; extract ECN
         mov     eax, ebx
-        and     eax, 0x03
+        and     eax, ECN_MASK
         mov     [edi+12], eax
 
         ; Bytes 2-3: Total Length (16 bits)
@@ -114,12 +123,12 @@ _decode_header:
 
         ; extract Flags
         mov     ebx, eax
-        shr     ebx, 13
-        and     ebx, 0x07  ; 3 bits
+        shr     ebx, FLAGS_SHIFT
+        and     ebx, FLAGS_MASK
         mov     [edi+24], ebx
 
         ; extract Fragment Offset
-        and     eax, 0x1FFF  ; 13 bits
+        and     eax, FRAG_MASK
         mov     [edi+28], eax
 
         ; Byte 8: TTL (8 bits)
