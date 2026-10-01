@@ -122,6 +122,10 @@ _decode_header:
         and     eax, 0x1FFF  ; 13 bits
         mov     [edi+28], eax
 
+        ; Byte 8: TTL (8 bits)
+        movzx   eax, byte [esi+8]  ; eax = byte 8
+        mov     [edi+32], eax
+
         popa
         mov     eax, 0
         leave
