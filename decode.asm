@@ -61,8 +61,10 @@ _decode_header:
         ; Nothing here reads the file or prints. This routine only fills
         ; the struct, and driver.c does the rest.
         ;
-        mov     esi, [ebp+8]    ; hdr
-        mov     edi, [ebp+12]   ; out
+
+        ; byte 0: version top 4 bits, ihl the low 4
+        mov     esi, [ebp+8]    ; hdr pointer to the raw header
+        mov     edi, [ebp+12]   ; out struct pointer
 
         movzx   eax, byte [esi]      ; load byte 0
         mov     ebx, eax
@@ -72,6 +74,14 @@ _decode_header:
 
         and     eax, 0x0F              ; low nibble
         mov     [edi+4], eax           ; ihl
+
+        ; byte 1: dscp 6 bits, ecn the low 2
+        movzx   eax, byte [esi+1]      ; load byte 1
+        mov     ebx, eax
+        shr     ebx, 2                 ; 8 - 2 = 6 bits left
+        mov     [edi+8], ebx           ; dscp
+        and     eax, 0x03              ; low 2 bits
+        mov     [edi+12], eax          ; ecn
 
         popa
         mov     eax, 0
