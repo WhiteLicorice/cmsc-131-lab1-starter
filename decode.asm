@@ -106,6 +106,22 @@ _decode_header:
         or      eax, ebx
         mov     [edi+20], eax
 
+        ; Bytes 6-7: Flags (high 3 bits) | Fragment Offset (low 13 bits)
+        movzx   eax, byte [esi+6]  ; high byte
+        shl     eax, 8
+        movzx   ebx, byte [esi+7]  ; low byte
+        or      eax, ebx
+
+        ; extract Flags
+        mov     ebx, eax
+        shr     ebx, 13
+        and     ebx, 0x07  ; 3 bits
+        mov     [edi+24], ebx
+
+        ; extract Fragment Offset
+        and     eax, 0x1FFF  ; 13 bits
+        mov     [edi+28], eax
+
         popa
         mov     eax, 0
         leave
