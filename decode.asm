@@ -83,12 +83,19 @@ _decode_header:
         and     eax, 0x03              ; low 2 bits
         mov     [edi+12], eax          ; ecn
 
-        ; bytes 2-3: total length, big-endian
+        ; bytes 2-3: total length, big-endian, 16 bits
         movzx   eax, byte [esi+2]      ; reads byte 2
         shl     eax, 8                 ; moves 8 bits for lowbyte
         movzx   edx, byte [esi+3]      ; reads byte 3
         or      eax, edx               ; merges into one 16-bit
         mov     [edi+16], eax          ; total_length
+
+        ; bytes 4-5: identification, big-endian, 16 bits
+        movzx   eax, byte [esi+4]    
+        shl     eax, 8                 ; moves 8 bits for lowbyte
+        movzx   edx, byte [esi+5]      
+        or      eax, edx                ; merges into one 16-bit
+        mov     [edi+20], eax          ; identification
 
         popa
         mov     eax, 0
