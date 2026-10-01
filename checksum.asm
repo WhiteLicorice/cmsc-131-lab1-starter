@@ -66,7 +66,7 @@ _ip_checksum:
         ; ecx = remaining length
         ; esi = pointer to header
 
-        xor     ax, eax
+        xor     eax, eax
         mov     ecx, [ebp + 12]
         mov     esi, [ebp+8]
 
@@ -77,7 +77,7 @@ _ip_checksum:
         movzx   edx, byte [esi]
         shl     edx, 8
 
-        movzx   edx, byte [esi+1]
+        movzx   ebx, byte [esi+1]
         or      edx, ebx
 
         add     eax, edx
@@ -103,7 +103,5 @@ _ip_checksum:
         popa
         pop eax
 
-
-        mov     eax, 0
         leave
         ret
