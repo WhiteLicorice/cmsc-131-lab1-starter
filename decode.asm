@@ -130,6 +130,13 @@ _decode_header:
         movzx   eax, byte [esi+9]  ; eax = byte 9
         mov     [edi+36], eax
 
+        ; Bytes 10-11: Header Checksum (16 bits)
+        movzx   eax, byte [esi+10]  ; high byte
+        shl     eax, 8
+        movzx   ebx, byte [esi+11]  ; low byte
+        or      eax, ebx
+        mov     [edi+40], eax
+
         popa
         mov     eax, 0
         leave
