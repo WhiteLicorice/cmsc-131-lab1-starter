@@ -62,11 +62,11 @@ _decode_header:
         ; the struct, and driver.c does the rest.
         ;
 
-        ; byte 0: version top 4 bits, ihl the low 4
         mov     esi, [ebp+8]    ; hdr pointer to the raw header
         mov     edi, [ebp+12]   ; out struct pointer
 
-        movzx   eax, byte [esi]      ; load byte 0
+        ; byte 0: version top 4 bits, ihl the low 4
+        movzx   eax, byte [esi]      ; reads byte 0
         mov     ebx, eax
         shr     ebx, 4                ; high nibble
         and     ebx, 0x0F
@@ -76,12 +76,19 @@ _decode_header:
         mov     [edi+4], eax           ; ihl
 
         ; byte 1: dscp 6 bits, ecn the low 2
-        movzx   eax, byte [esi+1]      ; load byte 1
+        movzx   eax, byte [esi+1]      ; reads byte 1
         mov     ebx, eax
         shr     ebx, 2                 ; 8 - 2 = 6 bits left
         mov     [edi+8], ebx           ; dscp
         and     eax, 0x03              ; low 2 bits
         mov     [edi+12], eax          ; ecn
+
+        ; bytes 2-3: total length, big-endian
+        movzx   eax, byte [esi+2]      ; reads byte 2
+        shl     eax, 8                 ; moves 8 bits for lowbyte
+        movzx   edx, byte [esi+3]      ; reads byte 3
+        or      eax, edx               ; merges into one 16-bit
+        mov     [edi+16], eax          ; total_length
 
         popa
         mov     eax, 0
