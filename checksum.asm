@@ -40,7 +40,9 @@ segment .text
         global  _ip_checksum
 _ip_checksum:
         enter   0,0
-        pusha
+
+        push    ebx
+        push    esi
 
         ;
         ; TODO: the checksum loop.
@@ -62,7 +64,48 @@ _ip_checksum:
         ; enough. Leave the answer in ax when you return.
         ;
 
-        popa
-        mov     eax, 0
+        ; eax = 32-bit accumulator
+        ; ecx = remaining length
+        ; esi = pointer to header
+
+        xor     eax, eax
+        mov     ecx, [ebp + 12]
+        mov     esi, [ebp+8]
+
+        cmp     ecx, 0
+        jle    .fold
+
+.sum_loop:
+        ; Build one 16-bit big-endian word:
+        ; word = (hdr[i] << 8) | hdr[i+1]
+
+        movzx   edx, byte [esi]
+        shl     edx, 8
+
+        movzx   ebx, byte [esi+1]
+        or      edx, ebx
+
+        add     eax, edx
+
+        add     esi, 2
+        sub     ecx, 2
+        jnz     .sum_loop
+
+.fold:
+        mov     edx, eax
+        shr     edx, 16
+        and     eax, 0xFFFF
+        add     eax, edx
+
+        cmp     eax, 0xFFFF
+        ja      .fold
+
+        not     ax
+
+        ; Preserve the calculated return value across pop
+
+        pop     esi
+        pop     ebx
+
         leave
         ret
