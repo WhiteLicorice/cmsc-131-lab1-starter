@@ -62,23 +62,120 @@ _decode_header:
         ; the struct, and driver.c does the rest.
         ;
 
-        ; Week 1: Decode Prototype
-
-        ; byte 0: version and ihl
+        
+        ; extracting header
         mov     esi, [ebp+8]            ; hdr
         mov     edi, [ebp+12]           ; out, ipv4_fields
 
+        ; byte 0: version and ihl
         ; shifting and masking
-        movzx   eax, byte [esi+0]       ; get byte 0
+        movzx   eax, byte [esi+0]       ; gets byte 0
         shr     eax, 4                  ; shift right by 4   
         
-        movzx   ebx, byte [esi+0]       ; get byte 0
+        movzx   ebx, byte [esi+0]       ; gets byte 0
         and     ebx, 0x0F               ; masking the ihl in the low nibble                   
 
         mov     [edi+0], eax            ; storing version to out
         mov     [edi+4], ebx            ; storing ihl to out
 
-        ; byte 1 - to be continued lol
+
+        ; byte 1: dscp and ecn
+        movzx   eax, byte [esi+1]       ; gets byte 1
+        shr     eax, 2                  ; shift to get the higher 6-bits for dscp
+
+        movzx   ebx, byte [esi+1]       ; gets byte 1
+        and     ebx, 0x03               ; mask for the bottom 2-bits
+
+        mov     [edi+8], eax            ; storing dscp to out
+        mov     [edi+12], ebx           ; storing ecn to out
+
+
+        ; bytes 2-3: total length, one 16-bits 
+        movzx   eax, byte [esi+2]       ; gets the byte 2
+        shl     eax, 8                  ; shift left to get the high byte
+
+        movzx   ebx, byte [esi+3]       ; gets the byte 3
+        or      eax, ebx                ; mask to combine
+                                        ; eax = 16-bit value for total length
+
+        mov     [edi+16], eax           ; storing total length to out
+
+
+        ; bytes 4-5: identification, one 16-bits
+        movzx   eax, byte [esi+4]       ; gets the byte 4
+        shl     eax, 8                  ; shift left to get the high byte
+
+        movzx   ebx, byte [esi+5]       ; gets the byte 5
+        or      eax, ebx                ; mask to combine
+                                        ; eax = 16-bit value for identification
+
+        mov     [edi+20], eax           ; storing identification to out
+
+
+        ; byte 6-7: flags and fragment offset
+        movzx   eax, byte [esi+6]       ; gets the byte 6
+        shl     eax, 8                  ; shift left to get the high byte                  
+
+        movzx   ebx, byte [esi+7]       ; gets the byte 
+        or      eax, ebx                ; mask to combine
+
+        mov     ebx, eax                ; copy combined bytes 6-7
+        shr     eax, 13                 ; shift right by 13 for flags
+        and     ebx, 0x1FFF             ; mask for the bottom 13 bits for fragment offset
+
+        mov     [edi+24], eax
+        mov     [edi+28], ebx
+
+
+        ; byte 8: ttl
+        movzx   eax, byte [esi+8]       ; gets the byte 8
+
+        mov     [edi+32], eax           ; storing ttl to out
+
+
+        ; byte 9: protocol
+        movzx   eax, byte [esi+9]       ; gets the byte 9
+
+        mov     [edi+36], eax           ; storing protocol to out
+
+
+        ; bytes 10-11: header checksum
+        movzx   eax, byte [esi+10]      ; gets the byte 10
+        shl     eax, 8                  ; shift left by 8 to get high byte
+
+        movzx   ebx, byte [esi+11]      ; gets the byte 11
+        or      eax, ebx                ; mask to combine 16-bits
+
+        mov     [edi+40], eax           ; storing header checksum to out
+                                        
+
+        ; bytes 12-15: source address
+        movzx   eax, byte [esi+12]      ; gets the byte 12
+        mov     [edi+44], al            ; stores the first byte
+
+        movzx   eax, byte [esi+13]      ; gets the byte 13
+        mov     [edi+45], al            ; stores the second byte
+
+        movzx   eax, byte [esi+14]      ; gets the byte 14
+        mov     [edi+46], al            ; stores the third byte
+
+        movzx   eax, byte [esi+15]      ; gets the byte 15
+        mov     [edi+47], al            ; stores the fourth byte
+
+
+        ; bytes 16-19: destination address
+        movzx   eax, byte [esi+16]      ; gets the byte 16
+        mov     [edi+48], al            ; stores the first byte
+
+        movzx   eax, byte [esi+17]      ; gets the byte 17
+        mov     [edi+49], al            ; stores the second byte
+
+        movzx   eax, byte [esi+18]      ; gets the byte 18
+        mov     [edi+50], al            ; stores the third byte
+
+        movzx   eax, byte [esi+19]      ; gets the byte 19
+        mov     [edi+51], al            ; stores the fourth byte
+
 
         popa
         mov     eax, 0
