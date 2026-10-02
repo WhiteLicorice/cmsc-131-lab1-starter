@@ -69,10 +69,10 @@ _decode_header:
 
         ; byte 0: version and ihl
         ; shifting and masking
-        movzx   eax, byte [esi+0]       ; get byte 0
+        movzx   eax, byte [esi+0]       ; gets byte 0
         shr     eax, 4                  ; shift right by 4   
         
-        movzx   ebx, byte [esi+0]       ; get byte 0
+        movzx   ebx, byte [esi+0]       ; gets byte 0
         and     ebx, 0x0F               ; masking the ihl in the low nibble                   
 
         mov     [edi+0], eax            ; storing version to out
@@ -80,10 +80,10 @@ _decode_header:
 
 
         ; byte 1: dscp and ecn
-        movzx   eax, byte [esi+1]       ; get byte 1
+        movzx   eax, byte [esi+1]       ; gets byte 1
         shr     eax, 2                  ; shift to get the higher 6-bits for dscp
 
-        movzx   ebx, byte [esi+1]       ; get byte 1
+        movzx   ebx, byte [esi+1]       ; gets byte 1
         and     ebx, 0x03               ; mask for the bottom 2-bits
 
         mov     [edi+8], eax            ; storing dscp to out
@@ -114,17 +114,17 @@ _decode_header:
 
         ; byte 6-7: flags and fragment offset
         movzx   eax, byte [esi+6]       ; gets the byte 6
-        shl     eax, 8
+        shl     eax, 8                  ; shift left to get the high byte                  
 
-        movzx   ebx, byte [esi+7]       ; gets the byte 7
-        or      eax, ebx                ; combines them
+        movzx   ebx, byte [esi+7]       ; gets the byte 
+        or      eax, ebx                ; mask to combine
 
         mov     ebx, eax                ; copy combined bytes 6-7
         shr     eax, 13                 ; shift right by 13 for flags
-        and     ebx, 0x1FF              ; mask for the bottom 13 bits for fragment offset
+        and     ebx, 0x1FFF             ; mask for the bottom 13 bits for fragment offset
 
-        mov     ebx, [edi+24]
-        mov     eax, [edi+28]
+        mov     [edi+24], eax
+        mov     [edi+28], ebx
 
 
         ; byte 8: ttl
@@ -176,9 +176,6 @@ _decode_header:
         movzx   eax, byte [esi+19]      ; gets the byte 19
         mov     [edi+51], al            ; stores the fourth byte
 
-
-
-        ; bytes 16-19: destination address
 
         popa
         mov     eax, 0
