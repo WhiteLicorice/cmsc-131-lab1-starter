@@ -14,3 +14,15 @@ sample03 valid
 sample04 valid
 sample05 valid
 bad01 invalid
+frag0_none valid
+frag0_df valid
+frag0_mf valid
+frag0_df_mf valid
+frag1_none valid
+frag1_df valid
+frag1_mf valid
+frag1_df_mf valid
+frag8191_none valid
+frag8191_df valid
+frag8191_mf valid
+frag8191_df_mf valid
