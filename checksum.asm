@@ -69,15 +69,16 @@ _ip_checksum:
         ; esi = pointer to header
 
         xor     eax, eax
-        mov     ecx, [ebp + 12]
-        mov     esi, [ebp+8]
+        mov     ecx, [ebp + 12] ; len
+        mov     esi, [ebp+8]    ; pointer to hdr
 
-        cmp     ecx, 0
+        cmp     ecx, 0 ; loop guard
         jle    .fold
 
 .sum_loop:
         ; Build one 16-bit big-endian word:
         ; word = (hdr[i] << 8) | hdr[i+1]
+        ; e.g. 45 00 -> 0x4500
 
         movzx   edx, byte [esi]
         shl     edx, 8
@@ -85,22 +86,25 @@ _ip_checksum:
         movzx   ebx, byte [esi+1]
         or      edx, ebx
 
-        add     eax, edx
+        add     eax, edx ; add to the total
 
-        add     esi, 2
-        sub     ecx, 2
+        add     esi, 2  ; advance pointer by 2 bytes
+        sub     ecx, 2  ; reduce length by 2 bytes until 0
         jnz     .sum_loop
 
-.fold:
+        
+
+.fold: ; sum = lower 16 bits + upper 16 bits
         mov     edx, eax
         shr     edx, 16
         and     eax, 0xFFFF
         add     eax, edx
 
+        ; if there is a carry we fold again
         cmp     eax, 0xFFFF
         ja      .fold
 
-        not     ax
+        not     ax 
 
         ; Preserve the calculated return value across pop
 
