@@ -143,6 +143,47 @@ _encode_header:
         mov     [edi+9], al             ; store byte 9 
 
 
+        ; bytes 10-11: header checksum
+        mov     word [edi+10], 0        ; checksum must be zero while calculating
+
+        ; finished bytes 12-19 first before storing bytes 10-11
+
+        ; bytes 12-15: source address
+        mov     eax, [esi+44]           ; get first byte
+        mov     [edi+12], al            ; store byte 12  
+
+        mov     eax, [esi+45]           ; get second byte
+        mov     [edi+13], al            ; store byte 13  
+
+        mov     eax, [esi+46]           ; get third byte
+        mov     [edi+14], al            ; store byte 14  
+
+        mov     eax, [esi+47]           ; get fourth byte
+        mov     [edi+15], al            ; store byte 15  
+
+
+        ; bytes 16-19: destination address
+        mov     eax, [esi+48]           ; get first byte
+        mov     [edi+16], al            ; store byte 16  
+
+        mov     eax, [esi+49]           ; get second byte
+        mov     [edi+17], al            ; store byte 17  
+
+        mov     eax, [esi+50]           ; get third byte
+        mov     [edi+18], al            ; store byte 18  
+
+        mov     eax, [esi+51]           ; get fourth byte
+        mov     [edi+19], al            ; store byte 19
+
+
+        push    20                      ; header length
+        push    edi                     ; header address
+        call    _ip_checksum            ; calculate checksum
+        add     esp, 8                  ; remove arguments from stack
+
+        mov     [edi+10], ah            ; store byte 10 (checksum high byte)
+        mov     [edi+11], al            ; store byte 11 (checksum low byte)
+
         popa
         mov     eax, 0
         leave
