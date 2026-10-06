@@ -1,6 +1,8 @@
 <!--no-pdf-->
 # CMSC 131 Lab 1 Starter
 
+[![lab1-checks](https://github.com/WhiteLicorice/cmsc-131-lab1-starter/actions/workflows/test.yml/badge.svg)](https://github.com/WhiteLicorice/cmsc-131-lab1-starter/actions/workflows/test.yml)
+
 Decode, encode, and checksum 20-byte IPv4 packet headers under a C driver.
 The manual is the assignment. This file is the repository's own notes.
 
@@ -22,6 +24,9 @@ LICENSE             CC BY-NC-SA 4.0, inherited from the pcasm material
 ```
 
 ## What to Run
+
+On Windows, run these commands in Git Bash, the shell from Block 1. In that
+shell, `make` is your alias for `mingw32-make`. On Linux, use your terminal.
 
 ```bash
 make
