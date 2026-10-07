@@ -8,8 +8,8 @@
 ;
 ; The contract, from driver.c:
 ;
-;       unsigned char *hdr        [ebp+12]
-;       struct ipv4_fields *in    [ebp+8]
+;       unsigned char *hdr        [ebp+12] ; destination
+;       struct ipv4_fields *in    [ebp+8] ; source
 ;
 ; driver.c documents the struct layout:
 ;
@@ -65,6 +65,80 @@ _encode_header:
         ; so a pointer kept in one of those survives the call. eax, ecx, and
         ; edx do not.
         ;
+
+        mov     esi, [ebp + 8]
+        mov     edi, [ebp + 12]
+
+       
+        ; 1st DWord
+        ; byte 0 = Version | IHL
+        ; bits 7-4 = Version
+        ; bits 3-0 = IHL
+
+        mov     eax, [esi + 16]
+        mov    [edi], eax
+
+        ; 1st DoubleWord
+        ; byte 0 = Version | IHL
+        ; bits 7-4 = Version
+        ; bits 3-0 = IHL
+        xor     ebx, ebx
+        mov     eax, [esi]          ; eax = version
+        and     eax, 0x0000000F     ; keep only 4 bits
+        shl     eax, 4              ; move version to bits 7-4
+        or      ebx, eax
+
+        mov     eax, [esi + 4]      ; eax = IHL
+        and     eax, 0x0000000F     ; keep only 4 bits
+        or      ebx, eax
+        
+
+        ; byte 1 -> DSCP | ECN
+        ; 7 - 2 | 1 - 0
+        ; width 6 | 2
+        ; DCSP
+        mov     eax, [esi + 8]
+        and     eax, 0x0000003F
+        shl     eax, 10
+        or      ebx, eax
+       
+        ; ECN
+        mov     eax, [esi + 12]
+        and     eax, 0x00000003
+        shl     eax, 8
+        or      ebx, eax
+
+        ; 2 - 3 Byte
+        ; 8 | 8
+        mov     eax, [esi + 16]
+        and     eax, 0x000000FF
+        shl     eax, 24
+        or      ebx, eax
+
+        mov     eax, [esi + 16]
+        and     eax, 0x0000FF00
+        shl     eax, 8
+
+        mov     [edi], ebx
+        
+       
+        
+
+        
+
+
+
+        
+
+
+
+
+        
+
+
+        
+
+
 
         popa
         mov     eax, 0
