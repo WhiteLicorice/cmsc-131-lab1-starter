@@ -121,6 +121,64 @@ _encode_header:
 
         mov     [edi], ebx
         
+
+
+
+
+
+
+
+
+        ; 2nd DWord
+        ; 4 - 5 Byte
+        ; identification 8 | identification 8
+        ; 
+        xor     ebx, ebx
+        mov     eax, [esi + 20]
+        and     eax, 0x000000FF ; 0x001c
+        shl     eax, 8
+        or      ebx, eax
+
+        mov     eax, [esi + 20]
+        and     eax, 0x0000FF00 ;0x4600
+        shr     eax, 8 
+        or      ebx, eax
+        ; ebx -> 00 00 46 1c
+
+
+        ; byte 6 - 7
+        ; x -> flags 
+        ; y - > fragment_offset
+        ;[esi + 24] -> 0000 0xxx
+        ;[esi + 28] -> 000y yyyy   yyyy yyyy
+
+        ;[edi + 6] -> xxxy yyyy
+        ;[edi + 7] -> yyyy yyyy
+
+
+        ; byte 6
+        ; get the flags, and shift it to the left
+        mov     eax, [esi + 24]
+        and     eax, 0x07
+        shl     eax, 21
+        or     ebx, eax
+
+        ; lower 6 bits is still missing
+        ; get it in the next higher half of the fragment_offset
+        mov     eax, [esi + 28]
+        and     eax, 0x00001F00  ; 0b 0001 1111 0000 0000
+        shl     eax, 16
+        or      ebx, eax
+
+
+        ; byte 7
+        ; get the lower part of the fragment_offset
+        mov     eax, [esi + 28]
+        and     eax, 0x000000FF
+        shl     eax, 24
+        or      ebx, eax
+        
+        mov     [edi + 4], ebx 
        
         
 
