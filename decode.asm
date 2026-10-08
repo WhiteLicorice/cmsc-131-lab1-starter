@@ -140,6 +140,17 @@ _decode_header:
         mov     al, [esi+15]     ; gets the sixteenth byte
         mov     [edi+47], al     ; saves fourth source IP byte
         
+        mov     al, [esi+16]     ; gets the seventeenth byte
+        mov     [edi+48], al     ; saves first destination IP byte
+
+        mov     al, [esi+17]     ; gets the eighteenth byte
+        mov     [edi+49], al     ; saves second destination IP byte
+
+        mov     al, [esi+18]     ; gets the nineteenth byte
+        mov     [edi+50], al     ; saves third destination IP byte
+
+        mov     al, [esi+19]     ; gets the twentieth byte
+        mov     [edi+51], al     ; saves fourth destination IP byte
         popa
         mov     eax, 0
         leave
