@@ -126,8 +126,20 @@ _decode_header:
 
         movzx   edx, byte [esi+11]  ; gets the twelfth byte
         or      eax, edx            ; combines both bytes
-
         mov     [edi+40], eax       ; saves header checksum
+        
+        mov     al, [esi+12]     ; gets the thirteenth byte
+        mov     [edi+44], al     ; saves first source IP byte
+
+        mov     al, [esi+13]     ; gets the fourteenth byte
+        mov     [edi+45], al     ; saves second source IP byte
+
+        mov     al, [esi+14]     ; gets the fifteenth byte
+        mov     [edi+46], al     ; saves third source IP byte
+
+        mov     al, [esi+15]     ; gets the sixteenth byte
+        mov     [edi+47], al     ; saves fourth source IP byte
+        
         popa
         mov     eax, 0
         leave
