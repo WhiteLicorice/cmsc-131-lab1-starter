@@ -121,6 +121,13 @@ _decode_header:
         movzx   eax, byte [esi+9]  ; gets the tenth byte
         mov     [edi+36], eax      ; saves protocol
         
+        movzx   eax, byte [esi+10]  ; gets the eleventh byte
+        shl     eax, 8              ; shifts left by 8 bits
+
+        movzx   edx, byte [esi+11]  ; gets the twelfth byte
+        or      eax, edx            ; combines both bytes
+
+        mov     [edi+40], eax       ; saves header checksum
         popa
         mov     eax, 0
         leave
