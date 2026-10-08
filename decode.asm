@@ -115,6 +115,12 @@ _decode_header:
         and     eax, 0x1FFF        ; keeps the lower 13 bits
         mov     [edi+28], eax      ; saves fragment offset
         
+        movzx   eax, byte [esi+8]  ; gets the ninth byte
+        mov     [edi+32], eax      ; saves TTL
+
+        movzx   eax, byte [esi+9]  ; gets the tenth byte
+        mov     [edi+36], eax      ; saves protocol
+        
         popa
         mov     eax, 0
         leave
