@@ -85,7 +85,13 @@ _decode_header:
         and     edx, 0x03          ; keeps the lower 2 bits for ECN
         mov     [edi+12], edx      ; saves ECN
 
+        movzx   eax, byte [esi+2]  ; gets the third byte
+        shl     eax, 8             ; shifts left by 8 bits
 
+        movzx   edx, byte [esi+3]  ; gets the fourth byte
+        or      eax, edx           ; combines both bytes
+
+        mov     [edi+16], eax      ; saves total length
         popa
         mov     eax, 0
         leave
