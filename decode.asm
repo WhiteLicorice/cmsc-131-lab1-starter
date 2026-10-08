@@ -92,6 +92,14 @@ _decode_header:
         or      eax, edx           ; combines both bytes
 
         mov     [edi+16], eax      ; saves total length
+     
+             movzx   eax, byte [esi+4]  ; gets the fifth byte
+        shl     eax, 8             ; shifts left by 8 bits
+
+        movzx   edx, byte [esi+5]  ; gets the sixth byte
+        or      eax, edx           ; combines both bytes
+
+        mov     [edi+20], eax      ; saves identification
         popa
         mov     eax, 0
         leave
