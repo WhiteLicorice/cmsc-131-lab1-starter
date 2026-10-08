@@ -118,6 +118,7 @@ _encode_header:
         mov     eax, [esi + 16]
         and     eax, 0x0000FF00
         shl     eax, 8
+        or      ebx, eax
 
         mov     [edi], ebx
         
@@ -215,10 +216,6 @@ _encode_header:
         
         mov     [edi + 8], ebx
 
-        ; byte 10 - 11 is done by the check_sum function
-        ; we skip these for now
-
-
 
 ; 4th DWORD
         ; byte 12 - 15 Source Address
@@ -247,6 +244,32 @@ _encode_header:
 
         mov     [edi + 12], ebx
 
+
+        ; 5th DWORD
+        ; byte 16 - 19 destination
+        xor     ebx, ebx
+
+        ; byte 16
+        mov     eax, [esi + 48]
+        and     eax, 0xFF000000
+        or      ebx, eax
+
+        ; byte 17
+        mov     eax, [esi + 48]     
+        and     eax, 0x00FF0000
+        or      ebx, eax
+
+        ; byte 18
+        mov     eax, [esi + 48]     
+        and     eax, 0x0000FF00
+        or      ebx, eax
+
+        ; byte 19
+        mov     eax, [esi + 48]     
+        and     eax, 0x000000FF
+        or      ebx, eax
+
+        mov     [edi + 16], ebx
 
 
         popa
