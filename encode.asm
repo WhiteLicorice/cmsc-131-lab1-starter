@@ -191,10 +191,32 @@ _encode_header:
 
 
 
+        ; 3rd DWORD
+        ; clear the ebx and the 3rd Dword
+        xor     ebx, ebx
+        mov     [edi + 8], 0   
         
-
+        ; byte 8        
+        mov     eax, [esi + 32]
+        and     eax, 0x000000FF
+        or      ebx, eax
+;       
+; up to this point, the program is working
+;
+;
+;
+;
+        ; byte 9
+        mov     eax, [esi + 36]
+        and     eax, 0x000000FF
+        shl     eax, 8
+        or      ebx, eax
 
         
+        mov     [edi + 8], ebx
+
+        ; byte 10 - 11 is done by the check_sum function
+        ; we skip these for now
 
 
 
