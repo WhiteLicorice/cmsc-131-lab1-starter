@@ -220,6 +220,35 @@ _encode_header:
 
 
 
+; 4th DWORD
+        ; byte 12 - 15 Source Address
+        ; clear ebx and the 4th Dword
+        xor     ebx, ebx
+        
+        ; byte 12
+        mov     eax, [esi + 44]
+        and     eax, 0xFF000000
+        or      ebx, eax
+
+        ; byte 13
+        mov     eax, [esi + 44]     
+        and     eax, 0x00FF0000
+        or      ebx, eax
+
+        ; byte 14
+        mov     eax, [esi + 44]     
+        and     eax, 0x0000FF00
+        or      ebx, eax
+
+        ; byte 15
+        mov     eax, [esi + 44]     
+        and     eax, 0x000000FF
+        or      ebx, eax
+
+        mov     [edi + 12], ebx
+
+
+
         popa
         mov     eax, 0
         leave
