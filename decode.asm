@@ -75,6 +75,17 @@ _decode_header:
         and     eax, 0x0F        ; keep only 4 bits
         mov     [edi+0], eax     ; saves version
 
+        movzx   eax, byte [esi+1]  ; gets the second byte
+        mov     edx, eax           ; copies the second byte
+
+        shr     eax, 2             ; shifts right to get the upper 6 bits
+        and     eax, 0x3F          ; keeps only 6 bits for DSCP
+        mov     [edi+8], eax       ; saves DSCP
+
+        and     edx, 0x03          ; keeps the lower 2 bits for ECN
+        mov     [edi+12], edx      ; saves ECN
+
+
         popa
         mov     eax, 0
         leave
