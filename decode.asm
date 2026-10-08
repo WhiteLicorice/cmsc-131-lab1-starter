@@ -100,6 +100,21 @@ _decode_header:
         or      eax, edx           ; combines both bytes
 
         mov     [edi+20], eax      ; saves identification
+        
+        movzx   eax, byte [esi+6]  ; gets the seventh byte
+        shl     eax, 8             ; shifts left by 8 bits
+
+        movzx   edx, byte [esi+7]  ; gets the eighth byte
+        or      eax, edx           ; combines both bytes
+
+        mov     edx, eax           ; copies the combined bytes
+        shr     edx, 13            ; shifts right to get the upper 3 bits
+        and     edx, 0x07          ; keeps only 3 bits for flags
+        mov     [edi+24], edx      ; saves flags
+
+        and     eax, 0x1FFF        ; keeps the lower 13 bits
+        mov     [edi+28], eax      ; saves fragment offset
+        
         popa
         mov     eax, 0
         leave
