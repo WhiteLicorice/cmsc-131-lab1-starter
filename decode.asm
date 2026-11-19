@@ -132,6 +132,49 @@ _decode_header:
         mov     [esi+24], eax
 
         ; -----------------------------------------
+        ; TTL (byte 8)
+        ; -----------------------------------------
+
+        movzx   eax, byte [edi+8]
+        mov     [esi+32], eax
+
+        ; -----------------------------------------
+        ; Protocol (byte 9)
+        ; -----------------------------------------
+
+        movzx   eax, byte [edi+9]
+        mov     [esi+36], eax
+
+        ; -----------------------------------------
+        ; Header Checksum (bytes 10-11)
+        ; -----------------------------------------
+
+        movzx   eax, byte [edi+10]
+        shl     eax, 8
+
+        movzx   ebx, byte [edi+11]
+        or      eax, ebx
+
+        mov     [esi+40], eax
+
+        ; -----------------------------------------
+        ; Source Address (bytes 12-15)
+        ; -----------------------------------------
+
+        mov     al, [edi+12]
+        mov     [esi+44], al
+
+        mov     al, [edi+13]
+        mov     [esi+45], al
+
+        mov     al, [edi+14]
+        mov     [esi+46], al
+
+        mov     al, [edi+15]
+        mov     [esi+47], al
+
+
+        ; -----------------------------------------
         ; Restore registers and return.
         ; -----------------------------------------;
         popa
