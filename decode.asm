@@ -62,6 +62,30 @@ _decode_header:
         ; the struct, and driver.c does the rest.
         ;
 
+        ; Arguments:
+        ; [EBP+8]  = hdr
+        ; [EBP+12] = out
+
+        mov     esi, [ebp+12]          ; output struct
+        mov     edi, [ebp+8]           ; IPv4 header
+
+        ; -----------------------------------------
+        ; Version and IHL (byte 0)
+        ; -----------------------------------------
+
+        movzx   eax, byte [edi]
+
+        mov     ebx, eax
+        shr     eax, 4
+        mov     [esi], eax             ; version
+
+        mov     eax, ebx
+        and     eax, 0x0F
+        mov     [esi+4], eax           ; IHL
+
+        ; -----------------------------------------
+        ; Restore registers and return.
+        ; -----------------------------------------;
         popa
         mov     eax, 0
         leave
