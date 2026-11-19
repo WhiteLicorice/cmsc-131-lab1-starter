@@ -77,6 +77,29 @@ _encode_header:
 
     mov     [edi+5], bl
 
+        ; ------------------------------------------------
+    ; Bytes 6-7: Flags (3 bits) | Fragment Offset (13 bits)
+    ; ------------------------------------------------
+
+    mov     eax, [esi+24]
+    and     eax, 0x07
+    shl     eax, 13
+
+    mov     ebx, [esi+28]
+    and     ebx, 0x1FFF
+
+    or      eax, ebx
+
+    ; Write the resulting 16-bit word in big-endian order.
+    mov     ebx, eax
+
+    shr     eax, 8
+    mov     [edi+6], al
+
+    mov     [edi+7], bl
+
+
+
     popa
     mov     eax, 0
 
