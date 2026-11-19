@@ -112,6 +112,18 @@ _decode_header:
         mov     [esi+16], eax
 
         ; -----------------------------------------
+        ; Identification (bytes 4-5)
+        ; -----------------------------------------
+
+        movzx   eax, byte [edi+4]
+        shl     eax, 8
+
+        movzx   ebx, byte [edi+5]
+        or      eax, ebx
+
+        mov     [esi+20], eax
+
+        ; -----------------------------------------
         ; Flags and Fragment Offset (bytes 6-7)
         ; -----------------------------------------
 
@@ -173,6 +185,21 @@ _decode_header:
         mov     al, [edi+15]
         mov     [esi+47], al
 
+        ; -----------------------------------------
+        ; Destination Address (bytes 16-19)
+        ; -----------------------------------------
+
+        mov     al, [edi+16]
+        mov     [esi+48], al
+
+        mov     al, [edi+17]
+        mov     [esi+49], al
+
+        mov     al, [edi+18]
+        mov     [esi+50], al
+
+        mov     al, [edi+19]
+        mov     [esi+51], al
 
         ; -----------------------------------------
         ; Restore registers and return.
