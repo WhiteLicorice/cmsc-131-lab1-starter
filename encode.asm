@@ -108,6 +108,23 @@ _encode_header:
     mov     eax, [esi+36]
     mov     [edi+9], al
 
+    ; ------------------------------------------------
+    ; Bytes 10-11: Checksum (initially zero)
+    ; ------------------------------------------------
+
+    mov     word [edi+10], 0
+
+    ; ------------------------------------------------
+    ; Calculate checksum over all 20 bytes.
+    ; ip_checksum(hdr, 20)
+    ; ------------------------------------------------
+
+    push    dword 20
+    push    dword edi
+    call    _ip_checksum
+    add     esp, 8
+
+
     popa
     mov     eax, 0
 
