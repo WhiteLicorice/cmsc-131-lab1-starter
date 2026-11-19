@@ -101,6 +101,7 @@ Keep each part short. Update it when the plan changes.
 
 ### Problem analysis
 
+<<<<<<< Updated upstream
 What the tool must read, what it must write, and which field is the hard
 one. State the header layout in your own words.
 
@@ -108,6 +109,50 @@ one. State the header layout in your own words.
 
 How the three routines split the work. Which registers each routine uses,
 and how the struct offsets in `driver.c` map to the fields.
+=======
+**Decode subsystem (`decode.asm`)**
+The decode routine reads a 20-byte IPv4 base header and extracts its 13 fields into the ipv4_fields structure provided by the C driver. Since IPv4 stores multi-byte fields in network byte order (big-endian), these values must be reconstructed correctly when reading the header bytes.
+
+Some fields share a byte, such as Version and IHL in the first byte, and DSCP and ECN in the second byte. The Flags and Fragment Offset fields also share two bytes, requiring bit shifting and masking to extract them separately.
+
+**Encode Subsystem ('encode.asm')**
+The encode routine builds a 20-byte IPv4 base header from the ipv4_fields structure. It reads 12 of the 13 fields and writes each at its position in the header. The checksum member is not copied. It is computed at the end instead.
+
+Some fields share a byte and must be packed: Version and IHL in byte 0, DSCP and ECN in byte 1. Flags (3 bits) and Fragment Offset (13 bits) share bytes 6-7, so they are combined into one 16-bit word before being split into two bytes. The 16-bit fields (Total Length, Identification, and the flags/offset word) must be written in network byte order, high byte first.
+
+### Solution architecture
+
+**Decode subsystem (`decode.asm`)**
+The decode routine is implemented in decode.asm and follows the 32-bit cdecl calling convention. It receives two arguments: a pointer to the 20-byte header and a pointer to the output structure.
+
+It extracts each field using byte access, bitwise operations, and shifts. Multi-byte fields are reconstructed in big-endian order by combining their bytes. Fields occupying only part of a byte are isolated using shifts and masks.
+
+The extracted values are stored at their corresponding offsets in the output structure:
+
+Offsets 0–12: Version, IHL, DSCP, and ECN.
+
+Offsets 16–28: Total Length, Identification, Flags, and Fragment Offset.
+
+Offsets 32–40: TTL, Protocol, and Header Checksum.
+
+Offsets 44–47: Source Address.
+
+Offsets 48–51: Destination Address.
+
+The routine uses pusha and popa to preserve general-purpose registers, follows the stack frame established with enter and leave, and returns with the stack balanced.
+
+The decode implementation was completed and tested against the provided IPv4 header fixtures. An additional fixture, edge_dscp_ecn.bin, was added to exercise the extraction of mixed DSCP and ECN values and verify that the two fields are correctly separated from the same byte.
+
+**Encode Subsystem ('encode.asm')**
+The routine follows the 32-bit cdecl convention. After enter 0,0, in (the struct) is at [ebp+8] and hdr (the output buffer) is at [ebp+12]. esi holds in and is only read from. edi holds hdr and is only written to. Neither register moves, so every access is a fixed offset from one of them.
+
+Fields are handled in three groups:
+- Fields sharing a byte are masked to their width, shifted into position, and combined with or (byte 0 and byte 1).
+- The straddling field is built as one 16-bit word: flags & 0x07 shifted left 13, or'd with fragment_offset & 0x1FFF, then split into bytes 6 and 7.
+- Everything else is stored directly. 16-bit fields are split with shr 8 (high byte first, low byte second), which is the big-endian conversion done by hand. TTL and protocol are single bytes. The addresses are copied byte by byte, since they are already in network order.
+
+The checksum is handled in order: bytes 10-11 are zeroed, ip_checksum(hdr, 20) is called over the finished header (arguments pushed right to left, caller removes them with add esp, 8), and the result in ax is stored with ah in byte 10 and al in byte 11.
+>>>>>>> Stashed changes
 
 ### Timeline
 
