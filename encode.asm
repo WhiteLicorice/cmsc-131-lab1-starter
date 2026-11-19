@@ -115,6 +115,38 @@ _encode_header:
     mov     word [edi+10], 0
 
     ; ------------------------------------------------
+    ; Bytes 12-15: Source Address
+    ; ------------------------------------------------
+
+    mov     al, [esi+44]
+    mov     [edi+12], al
+
+    mov     al, [esi+45]
+    mov     [edi+13], al
+
+    mov     al, [esi+46]
+    mov     [edi+14], al
+
+    mov     al, [esi+47]
+    mov     [edi+15], al
+
+    ; ------------------------------------------------
+    ; Bytes 16-19: Destination Address
+    ; ------------------------------------------------
+
+    mov     al, [esi+48]
+    mov     [edi+16], al
+
+    mov     al, [esi+49]
+    mov     [edi+17], al
+
+    mov     al, [esi+50]
+    mov     [edi+18], al
+
+    mov     al, [esi+51]
+    mov     [edi+19], al
+
+    ; ------------------------------------------------
     ; Calculate checksum over all 20 bytes.
     ; ip_checksum(hdr, 20)
     ; ------------------------------------------------
@@ -124,6 +156,15 @@ _encode_header:
     call    _ip_checksum
     add     esp, 8
 
+    ; AX contains the checksum in host byte order.
+    ; Store high byte first, then low byte.
+
+    mov     [edi+10], ah
+    mov     [edi+11], al
+
+    ; ------------------------------------------------
+    ; Return 0 and restore registers.
+    ; ------------------------------------------------
 
     popa
     mov     eax, 0
