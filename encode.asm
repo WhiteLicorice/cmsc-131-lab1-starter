@@ -98,7 +98,15 @@ _encode_header:
 
     mov     [edi+7], bl
 
+    ; ------------------------------------------------
+    ; Bytes 8-9: TTL and Protocol
+    ; ------------------------------------------------
 
+    mov     eax, [esi+32]
+    mov     [edi+8], al
+
+    mov     eax, [esi+36]
+    mov     [edi+9], al
 
     popa
     mov     eax, 0
