@@ -53,6 +53,30 @@ _encode_header:
     or      eax, ebx
     mov     [edi+1], al
 
+        ; ------------------------------------------------
+    ; Bytes 2-3: Total Length (16-bit big-endian)
+    ; ------------------------------------------------
+
+    mov     eax, [esi+16]
+    mov     ebx, eax
+
+    shr     eax, 8
+    mov     [edi+2], al
+
+    mov     [edi+3], bl
+
+    ; ------------------------------------------------
+    ; Bytes 4-5: Identification (16-bit big-endian)
+    ; ------------------------------------------------
+
+    mov     eax, [esi+20]
+    mov     ebx, eax
+
+    shr     eax, 8
+    mov     [edi+4], al
+
+    mov     [edi+5], bl
+
     popa
     mov     eax, 0
 
