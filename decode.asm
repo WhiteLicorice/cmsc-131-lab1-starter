@@ -62,6 +62,78 @@ _decode_header:
         ; the struct, and driver.c does the rest.
         ;
 
+        ; Arguments:
+        ; [EBP+8]  = hdr
+        ; [EBP+12] = out
+
+        mov     esi, [ebp+12]          ; output struct
+        mov     edi, [ebp+8]           ; IPv4 header
+
+        ; -----------------------------------------
+        ; Version and IHL (byte 0)
+        ; -----------------------------------------
+
+        movzx   eax, byte [edi]
+
+        mov     ebx, eax
+        shr     eax, 4
+        mov     [esi], eax             ; version
+
+        mov     eax, ebx
+        and     eax, 0x0F
+        mov     [esi+4], eax           ; IHL
+
+        ; -----------------------------------------
+        ; DSCP and ECN (byte 1)
+        ; -----------------------------------------
+
+        movzx   eax, byte [edi+1]
+
+        mov     ebx, eax
+        shr     eax, 2
+        and     eax, 0x3F
+        mov     [esi+8], eax           ; DSCP
+
+        mov     eax, ebx
+        and     eax, 0x03
+        mov     [esi+12], eax          ; ECN
+
+        ; -----------------------------------------
+        ; Total Length (bytes 2-3)
+        ; Big-endian: byte 2 is the high byte.
+        ; -----------------------------------------
+
+        movzx   eax, byte [edi+2]
+        shl     eax, 8
+
+        movzx   ebx, byte [edi+3]
+        or      eax, ebx
+
+        mov     [esi+16], eax
+
+        ; -----------------------------------------
+        ; Flags and Fragment Offset (bytes 6-7)
+        ; -----------------------------------------
+
+        movzx   eax, byte [edi+6]
+        shl     eax, 8
+
+        movzx   ebx, byte [edi+7]
+        or      eax, ebx
+
+        ; Lower 13 bits = fragment offset.
+        mov     ebx, eax
+        and     ebx, 0x1FFF
+        mov     [esi+28], ebx
+
+        ; Upper 3 bits = flags.
+        shr     eax, 13
+        and     eax, 0x07
+        mov     [esi+24], eax
+
+        ; -----------------------------------------
+        ; Restore registers and return.
+        ; -----------------------------------------;
         popa
         mov     eax, 0
         leave
