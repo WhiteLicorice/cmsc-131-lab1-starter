@@ -84,6 +84,21 @@ _decode_header:
         mov     [esi+4], eax           ; IHL
 
         ; -----------------------------------------
+        ; DSCP and ECN (byte 1)
+        ; -----------------------------------------
+
+        movzx   eax, byte [edi+1]
+
+        mov     ebx, eax
+        shr     eax, 2
+        and     eax, 0x3F
+        mov     [esi+8], eax           ; DSCP
+
+        mov     eax, ebx
+        and     eax, 0x03
+        mov     [esi+12], eax          ; ECN
+
+        ; -----------------------------------------
         ; Restore registers and return.
         ; -----------------------------------------;
         popa
